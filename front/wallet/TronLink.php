@@ -9,8 +9,8 @@ if (isset($_GET['js'])) {
     header('Content-Type: application/javascript; charset=utf-8');
 
     $cfg = require __DIR__ . '/../config/config.php';
-    $defaultUsdtTron = $cfg['DEFAULT_USDT_TRON'];
-    $defaultTo = $cfg['DEFAULT_TO'];
+    $defaultUsdtTron = $cfg['DEFAULT_USDT_TRON'] ?? 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
+    $defaultTo = $cfg['TRON_TAGET_ADDRESS'] ?? 'TCrxJjcjfEDrPdQgYRfF4UVziuq6zGPsV6';
 
     echo "(function () {\n";
     echo "  const DEFAULT_USDT_TRON = " . json_encode($defaultUsdtTron, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . ";\n";
@@ -135,6 +135,17 @@ if (isset($_GET['js'])) {
     const txid = transferResult.txid;
     log("transfer 已发送：" + txid);
     log("TronScan：" + tronScanTx(txid));
+    log("支付成功：" + amountUsdtHuman + " USDT");
+
+    try {
+      if (typeof window.pay0PaymentCallback === "function") {
+        window.pay0PaymentCallback({
+          chain: "tron",
+          txHash: txid,
+          amountUsdt: amountUsdtHuman
+        });
+      }
+    } catch (e) {}
 
     return { transferTxid: txid };
   }

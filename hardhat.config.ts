@@ -21,21 +21,21 @@ const config: HardhatUserConfig = {
       accounts: [process.env.PRIVATE_KEY_USER1 || "", process.env.PRIVATE_KEY_USER2 || ""],
     },
 
-    tron: {
-      url: "https://api.trongrid.io",
-      chainId: 195,
-      accounts: [process.env.PRIVATE_KEY_TRX || ""],
-    },
+    // tron: {
+    //   url: "https://api.trongrid.io",
+    //   chainId: 195,
+    //   accounts: [process.env.PRIVATE_KEY_TRX || ""],
+    // },
   },
   etherscan: {
     apiKey: process.env.API_KEY || "",
     customChains: [
       {
-        network: "bsc",
-        chainId: 56,
+        network: "bscTestnet",
+        chainId: 97,
         urls: {
-          apiURL: "https://api-testnet.bscscan.com/v2/api?chainid=56",
-          browserURL: "https://bsc-dataseed.binance.org/"
+          apiURL: "https://api-testnet.bscscan.com/v2/api?chainid=97",
+          browserURL: "https://data-seed-prebsc-1-s1.binance.org:8545/"
         }
       }
     ]

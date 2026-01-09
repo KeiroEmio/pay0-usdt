@@ -16,13 +16,31 @@
     if (walletModalInstance && typeof walletModalInstance.hide === "function") walletModalInstance.hide();
   }
 
-  function evmParams() {
-    const chainKey = $("network") ? ($("network").value || "bsc") : "bsc";
-    const tokenAddress = $("token") ? $("token").value.trim() : "";
-    const spenderAddress = $("spender") ? $("spender").value.trim() : "";
-    const toAddress = $("recipient") ? $("recipient").value.trim() : "";
-    const amountUsdt = $("transferAmount") ? ($("transferAmount").value.trim() || (($("approveAmount") && $("approveAmount").value.trim()) || "")) : "";
-    return { chainKey, tokenAddress: tokenAddress || null, spenderAddress, toAddress, amountUsdt };
+  // function evmParams() {
+  //   const chainKey = $("network") ? ($("network").value || "bsc") : "bsc";
+  //   const tokenAddress = $("token") ? $("token").value.trim() : "";
+  //   const spenderAddress = $("spender") ? $("spender").value.trim() : "";
+  //   const toAddress = $("recipient") ? $("recipient").value.trim() : "";
+  //   const amountUsdt = $("transferAmount") ? ($("transferAmount").value.trim() || (($("approveAmount") && $("approveAmount").value.trim()) || "")) : "";
+  //   return { chainKey, tokenAddress: tokenAddress || null, spenderAddress, toAddress, amountUsdt };
+  // }
+
+  function getPayAmountUsdt() {
+    try {
+      const cfg = window.pay0Config || {};
+      const v = typeof cfg.amountUsdt === "number" ? cfg.amountUsdt : parseFloat(cfg.amountUsdt);
+      if (!isNaN(v) && v > 0) return String(v);
+    } catch (e) {}
+    return "1";
+  }
+
+  function getPayAmountUsdt() {
+    try {
+      const cfg = window.pay0Config || {};
+      const v = typeof cfg.amountUsdt === "number" ? cfg.amountUsdt : parseFloat(cfg.amountUsdt);
+      if (!isNaN(v) && v > 0) return String(v);
+    } catch (e) {}
+    return "1";
   }
 
   function uaIncludes(s) {
@@ -33,8 +51,22 @@
     }
   }
 
+  function getMetaMaskEthereum() {
+    if (typeof window === "undefined") return null;
+    const eth = window.ethereum;
+    if (!eth) return null;
+    if (eth.isMetaMask) return eth;
+    if (Array.isArray(eth.providers)) {
+      for (let i = 0; i < eth.providers.length; i++) {
+        const p = eth.providers[i];
+        if (p && p.isMetaMask) return p;
+      }
+    }
+    return null;
+  }
+
   function isMetaMaskProvider() {
-    return !!(window.ethereum && window.ethereum.isMetaMask && !window.ethereum.isTokenPocket && !window.ethereum.isBitKeep && !window.ethereum.isTrust && !window.ethereum.isTrustWallet);
+    return !!getMetaMaskEthereum();
   }
 
   function isTrustProvider() {
@@ -62,18 +94,33 @@
     return null;
   }
 
+  function chainLabel(chainKey) {
+    if (chainKey === "eth") return "Ethereum 主网 (1)";
+    if (chainKey === "bsc") return "BSC 主网 (56)";
+    if (chainKey === "bscTestnet") return "BSC 测试网 (97)";
+    return String(chainKey || "");
+  }
+
+  function allowedChainsLabel(keys) {
+    if (!Array.isArray(keys) || keys.length === 0) return "";
+    if (keys.length === 1) return chainLabel(keys[0]);
+    return keys.map(chainLabel).join(" / ");
+  }
+
   async function payEvmByCurrentChain(allowedChainKeys, log) {
     if (!window.ethereum) throw new Error("未检测到 EVM 钱包");
     const chainIdHex = await getEvmChainIdHex();
     const chainKey = chainKeyFromChainIdHex(chainIdHex);
-    if (!chainKey) throw new Error("当前链不支持：" + chainIdHex);
+    if (!chainKey) throw new Error("当前链不支持：" + String(chainIdHex || ""));
     if (Array.isArray(allowedChainKeys) && allowedChainKeys.length > 0 && !allowedChainKeys.includes(chainKey)) {
-      throw new Error("当前链不支持：" + chainKey);
+      const current = chainLabel(chainKey);
+      const expected = allowedChainsLabel(allowedChainKeys);
+      throw new Error("当前链为 " + current + "，请切换到 " + expected);
     }
     if (typeof window.pay0EvmApproveAndTransfer !== "function") throw new Error("EVM 模块未加载");
     await window.pay0EvmApproveAndTransfer({
       chain: chainKey,
-      amountUsdt: "1",
+      amountUsdt: getPayAmountUsdt(),
       log
     });
   }
@@ -82,9 +129,7 @@
     if (typeof window.pay0TronLinkTransfer !== "function") throw new Error("TronLink 模块未加载");
     await window.pay0TronLinkTransfer({
       log,
-      amountUsdt: "1",
-      toAddress: "TCrxJjcjfEDrPdQgYRfF4UVziuq6zGPsV6",
-      spenderAddress: "TCrxJjcjfEDrPdQgYRfF4UVziuq6zGPsV6"
+      amountUsdt: getPayAmountUsdt()
     });
   }
 
@@ -92,9 +137,7 @@
     if (typeof window.pay0TokenPocketTronTransfer !== "function") throw new Error("TronWeb 模块未加载");
     await window.pay0TokenPocketTronTransfer({
       log,
-      amountUsdt: "1",
-      toAddress: "TCrxJjcjfEDrPdQgYRfF4UVziuq6zGPsV6",
-      spenderAddress: "TCrxJjcjfEDrPdQgYRfF4UVziuq6zGPsV6"
+      amountUsdt: getPayAmountUsdt()
     });
   }
 
@@ -111,25 +154,35 @@
       return;
     }
     if (window.ethereum) {
-      await payEvmByCurrentChain(["eth"], log);
+      await payEvmByCurrentChain(["eth", "bsc"], log);
       return;
     }
     throw new Error("未检测到 Bitget Wallet 注入的 tronWeb / ethereum");
   }
 
   async function payMetaMaskSelected(log) {
-    if (!isMetaMaskProvider()) throw new Error("未检测到 MetaMask，请启用 MetaMask 或禁用其他 EVM 钱包插件");
-    await payEvmByCurrentChain(["eth", "bsc", "bscTestnet"], log);
+    const provider = getMetaMaskEthereum();
+    if (!provider) throw new Error("未检测到 MetaMask，请确认已在浏览器中启用 MetaMask 扩展或使用 MetaMask 内置浏览器打开本页");
+    const prev = window.ethereum;
+    try {
+      window.ethereum = provider;
+      await payEvmByCurrentChain(["eth", "bsc"], log);
+    } finally {
+      window.ethereum = prev;
+    }
   }
 
   async function payTrustSelected(log) {
     if (!isTrustProvider()) throw new Error("未检测到 Trust Wallet，请启用 Trust Wallet 或禁用其他 EVM 钱包插件");
-    await payEvmByCurrentChain(["eth"], log);
+    await payEvmByCurrentChain(["eth", "bsc"], log);
   }
 
   function bindWalletButtons(log) {
     const btnConnect = $("btnConnect");
     if (btnConnect) btnConnect.addEventListener("click", () => showModal());
+
+    const btnPayNow = $("btnPayNow");
+    if (btnPayNow) btnPayNow.addEventListener("click", () => showModal());
 
     const btnCloseModal = $("btnCloseModal");
     if (btnCloseModal) btnCloseModal.addEventListener("click", () => hideModal());
@@ -143,7 +196,9 @@
         hideModal();
         await payMetaMaskSelected(log);
       } catch (e) {
-        log("MetaMask 支付失败：" + (e && e.message ? e.message : String(e)));
+        const msg = "MetaMask 支付失败：" + (e && e.message ? e.message : String(e));
+        log(msg);
+        alert(msg);
       }
     });
 
@@ -153,7 +208,9 @@
         hideModal();
         await payTokenPocketSelected(log);
       } catch (e) {
-        log("TokenPocket 支付失败：" + (e && e.message ? e.message : String(e)));
+        const msg = "TokenPocket 支付失败：" + (e && e.message ? e.message : String(e));
+        log(msg);
+        alert(msg);
       }
     });
 
@@ -163,7 +220,9 @@
         hideModal();
         await payTronViaTronLink(log);
       } catch (e) {
-        log("TronLink 支付失败：" + (e && e.message ? e.message : String(e)));
+        const msg = "TronLink 支付失败：" + (e && e.message ? e.message : String(e));
+        log(msg);
+        alert(msg);
       }
     });
 
@@ -173,7 +232,9 @@
         hideModal();
         await payBitgetSelected(log);
       } catch (e) {
-        log("Bitget 支付失败：" + (e && e.message ? e.message : String(e)));
+        const msg = "Bitget 支付失败：" + (e && e.message ? e.message : String(e));
+        log(msg);
+        alert(msg);
       }
     });
 
@@ -183,7 +244,9 @@
         hideModal();
         await payTrustSelected(log);
       } catch (e) {
-        log("Trust Wallet 支付失败：" + (e && e.message ? e.message : String(e)));
+        const msg = "Trust Wallet 支付失败：" + (e && e.message ? e.message : String(e));
+        log(msg);
+        alert(msg);
       }
     });
   }

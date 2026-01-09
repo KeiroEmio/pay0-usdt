@@ -11,13 +11,17 @@ if (isset($_GET['js'])) {
     $cfg = require __DIR__ . '/../config/config.php';
     $defaultUsdtEth = $cfg['DEFAULT_USDT_ETH'] ?? '0xdAC17F958D2ee523a2206206994597C13D831ec7';
     $defaultUsdtBsc = $cfg['DEFAULT_USDT_BSC'] ?? '0x55d398326f99059fF775485246999027B3197955';
+    $defaultUsdtBscTest = $cfg['DEFAULT_USDT_BSC_TEST'] ?? $defaultUsdtBsc;
     $defaultToBsc = $cfg['BSC_TARGET_ADDRESS'] ?? '';
+    $defaultToBscTest = $cfg['BSC_TEST_TARGET_ADDRESS'] ?? $defaultToBsc;
     $defaultToEth = $cfg['ETH_TARGET_ADDRESS'] ?? '';
 
     echo "(function () {\n";
     echo "  const DEFAULT_USDT_ETH = " . json_encode($defaultUsdtEth, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . ";\n";
     echo "  const DEFAULT_USDT_BSC = " . json_encode($defaultUsdtBsc, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . ";\n";
+    echo "  const DEFAULT_USDT_BSC_TEST = " . json_encode($defaultUsdtBscTest, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . ";\n";
     echo "  const DEFAULT_TO_BSC = " . json_encode($defaultToBsc, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . ";\n";
+    echo "  const DEFAULT_TO_BSC_TEST = " . json_encode($defaultToBscTest, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . ";\n";
     echo "  const DEFAULT_TO_ETH = " . json_encode($defaultToEth, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . ";\n";
     echo <<<'JS'
 
@@ -48,8 +52,8 @@ if (isset($_GET['js'])) {
     if (chainKey === "bscTestnet") {
       return {
         chainIdHex: "0x61",
-        tokenAddress: DEFAULT_USDT_BSC,
-        toAddress: DEFAULT_TO_BSC
+        tokenAddress: DEFAULT_USDT_BSC_TEST,
+        toAddress: DEFAULT_TO_BSC_TEST
       };
     }
     return {
@@ -102,6 +106,16 @@ if (isset($_GET['js'])) {
     const tx = await token.transfer(toAddress, amount);
     log("EVM transfer 已发送：" + tx.hash);
     await tx.wait();
+    log("支付成功：" + amountUsdtHuman + " USDT");
+    try {
+      if (typeof window.pay0PaymentCallback === "function") {
+        window.pay0PaymentCallback({
+          chain: chainKey,
+          txHash: tx.hash,
+          amountUsdt: amountUsdtHuman
+        });
+      }
+    } catch (e) {}
   }
 
   window.pay0EvmApproveAndTransfer = evmTransfer;

