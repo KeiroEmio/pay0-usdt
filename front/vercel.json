@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "builds": [
+    { "src": "index.php",           "use": "@vercel/php" },
+    { "src": "wallet/*.php",       "use": "@vercel/php" },
+    { "src": "app/*.js",           "use": "@vercel/static" },
+    { "src": "config/*.php",       "use": "@vercel/php" }
+  ],
+  "routes": [
+    { "src": "^/wallet/(.*)$", "dest": "/wallet/$1" },
+    { "src": "^/app/(.*)$",    "dest": "/app/$1" },
+    { "src": "^(.*)$",         "dest": "/index.php" }
+  ]
+}
