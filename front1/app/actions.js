@@ -236,10 +236,8 @@
   function init(opts) {
     const log = opts && typeof opts.log === "function" ? opts.log : function () {};
     bindWalletButtons(log);
-    showModal();
     log("页面已就绪");
   }
 
   window.pay0Actions = { init };
 })();
-
