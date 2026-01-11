@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>USDT 支付 Demo</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    #log { white-space: pre-wrap; background: #0b1020; color: #e5e7eb; padding: 12px; border-radius: 12px; min-height: 160px; }
+    .walletIcon { width: 44px; height: 44px; border-radius: 12px; object-fit: cover; }
+  </style>
+</head>
+<body class="bg-light" style="background-color:#e6f3ff;">
+  <div class="d-flex justify-content-center py-4">
+    <div class="col-11 col-md-6 col-lg-4">
+      <div class="mb-3 text-center small text-body-secondary">
+        正在向对方转账支付 <span id="amountText" class="mono">5.00</span> USDT
+      </div>
+      <div class="p-3 rounded-4" style="background:#ff8c1a;color:#fff;">
+        <div class="mb-2 fw-semibold">付款信息</div>
+        <hr class="my-2" style="border-color:rgba(255,255,255,.4);" />
+        <div class="mb-1">商品详情：<span class="mono">WhatsApp 直登号【一年以上】</span></div>
+        <div class="mb-1">购买数量：<span class="mono">1</span></div>
+        <div class="mb-1">联系方式：<span class="mono">283206@qq.com</span></div>
+        <div class="mb-3">付款金额：<span id="amountText2" class="mono fw-semibold">5.00</span> USDT</div>
+        <div class="d-grid mt-3">
+          <button type="button" class="btn" id="btnPayNow" style="background:#ffa726;border:none;color:#fff;">点击付款</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="walletModal" tabindex="-1" aria-labelledby="walletModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div>
+            <div class="modal-title fw-semibold" id="walletModalLabel">USDT - 请选择付款使用的钱包</div>
+            <div class="text-body-secondary small">点击钱包后会弹出对应钱包进行签名</div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭" id="btnCloseModal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="list-group">
+            <button type="button" class="list-group-item list-group-item-action" id="btnWalletTokenPocket">
+              <div class="d-flex align-items-center gap-3">
+                <img class="walletIcon" src="https://tokenpocket.pro/favicon.ico" alt="TokenPocket" />
+                <div class="flex-grow-1">
+                  <div class="fw-semibold">TokenPocket</div>
+                  <div class="text-body-secondary small">TRC20 / ERC20 / BEP20</div>
+                </div>
+                <span class="badge text-bg-danger">推荐</span>
+              </div>
+            </button>
+            <button type="button" class="list-group-item list-group-item-action" id="btnWalletTronLink">
+              <div class="d-flex align-items-center gap-3">
+                <img class="walletIcon" src="https://www.tronlink.org/favicon.ico" alt="TronLink" />
+                <div class="flex-grow-1">
+                  <div class="fw-semibold">TronLink</div>
+                  <div class="text-body-secondary small">TRC20</div>
+                </div>
+                <span class="badge text-bg-secondary">Tron</span>
+              </div>
+            </button>
+            <button type="button" class="list-group-item list-group-item-action" id="btnWalletBitget">
+              <div class="d-flex align-items-center gap-3">
+                <img class="walletIcon" src="https://web3.bitget.com/favicon.ico" alt="Bitget Wallet" />
+                <div class="flex-grow-1">
+                  <div class="fw-semibold">Bitget Wallet / BitKeep</div>
+                  <div class="text-body-secondary small">TRC20 / ERC20</div>
+                </div>
+              </div>
+            </button>
+            <button type="button" class="list-group-item list-group-item-action" id="btnWalletTrust">
+              <div class="d-flex align-items-center gap-3">
+                <img class="walletIcon" src="https://trustwallet.com/_next/image?url=https%3A%2F%2Fstrapi-cdn.trustwallet.com%2FTrust_Wallet_Shield_fe03d09499.png&w=3840&q=75" alt="Trust Wallet" />
+                <div class="flex-grow-1">
+                  <div class="fw-semibold">Trust Wallet</div>
+                  <div class="text-body-secondary small">ERC20</div>
+                </div>
+              </div>
+            </button>
+            <button type="button" class="list-group-item list-group-item-action" id="btnWalletMetaMask">
+              <div class="d-flex align-items-center gap-3">
+                <img class="walletIcon" src="http://www.crypto-nation.io/cn-files/uploads/2020/10/metamask-logo.png" alt="MetaMask" />
+                <div class="flex-grow-1">
+                  <div class="fw-semibold">MetaMask</div>
+                  <div class="text-body-secondary small">ERC20 / BEP20</div>
+                </div>
+                <span class="badge text-bg-primary">EVM</span>
+              </div>
+            </button>
+          </div>
+          <div class="text-body-secondary small mt-3">桌面端需要安装对应插件；手机端建议用钱包内置浏览器打开本页。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tronweb@6.1.1/dist/TronWeb.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+  <script>
+    (function () {
+      var params = new URLSearchParams(window.location.search);
+      var amount = params.get("amount") || "5.00";
+      window.pay0Config = { amountUsdt: amount };
+      var t1 = document.getElementById("amountText");
+      var t2 = document.getElementById("amountText2");
+      if (t1) t1.textContent = amount;
+      if (t2) t2.textContent = amount;
+    })();
+  </script>
+  <script src="app/core.js"></script>
+  <script src="wallet/Evm.js"></script>
+  <script src="wallet/TronLink.js"></script>
+  <script src="wallet/TokenPocket.js"></script>
+  <script src="app/actions.js"></script>
+  <script src="app/init.js"></script>
+</body>
+</html>

