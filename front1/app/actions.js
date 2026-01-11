@@ -112,6 +112,22 @@
   }
 
   async function payTronViaTronLink(log) {
+    const hasTronLink = !!(window.tronLink && window.tronLink.request);
+    const hasTronWeb = !!window.tronWeb;
+    if (!hasTronLink && !hasTronWeb && isMobileEnv()) {
+      try {
+        const url = typeof window !== "undefined" && window.location && window.location.href ? window.location.href : "";
+        const payload = {
+          url: url,
+          action: "open",
+          protocol: "tronlink",
+          version: "1.0"
+        };
+        const encoded = encodeURIComponent(JSON.stringify(payload));
+        window.location.href = "tronlinkoutside://pull.activity?param=" + encoded;
+        return;
+      } catch (e) {}
+    }
     if (typeof window.pay0TronLinkTransfer !== "function") throw new Error("TronLink 模块未加载");
     await window.pay0TronLinkTransfer({
       log,
