@@ -33,6 +33,10 @@
     }
   }
 
+  function isMobileEnv() {
+    return uaIncludes("iphone") || uaIncludes("ipad") || uaIncludes("ipod") || uaIncludes("android");
+  }
+
   function getMetaMaskEthereum() {
     if (typeof window === "undefined") return null;
     const eth = window.ethereum;
@@ -144,7 +148,17 @@
 
   async function payMetaMaskSelected(log) {
     const provider = getMetaMaskEthereum();
-    if (!provider) throw new Error("未检测到 MetaMask，请确认已在浏览器中启用 MetaMask 扩展或使用 MetaMask 内置浏览器打开本页");
+    if (!provider) {
+      if (isMobileEnv()) {
+        try {
+          const url = typeof window !== "undefined" && window.location && window.location.href ? window.location.href : "";
+          const encoded = encodeURIComponent(url);
+          window.location.href = "https://metamask.app.link/dapp/" + encoded;
+          return;
+        } catch (e) {}
+      }
+      throw new Error("未检测到 MetaMask，请确认已在浏览器中启用 MetaMask 扩展或使用 MetaMask 内置浏览器打开本页");
+    }
     const prev = window.ethereum;
     try {
       window.ethereum = provider;
