@@ -1,11 +1,10 @@
 (function () {
-  // 默认配置
   var DEFAULT_CONFIG = {
-    amountUsdt: "5.00",
+    amountUsdt: "1.00",
     networks: {
       tron: {
         usdtAddress: "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
-        toAddress: "TCrxJjcjfEDrPdQgYRfF4UVziuq6zGPsV6"
+        toAddress: "TA15gtkcGHEUeyAioAbPwdrXD22mpu1CP8"
       },
       bsc: {
         chainIdHex: "0x38",
@@ -25,24 +24,21 @@
     }
   };
 
-  // 获取 URL 参数
   var params = new URLSearchParams(window.location.search);
   var amount = params.get("amount") || DEFAULT_CONFIG.amountUsdt;
   var chain = params.get("chain") || params.get("network") || "";
   var to = params.get("to") || params.get("address") || "";
 
-  // 暴露全局配置
   window.pay0Config = {
     amountUsdt: amount,
     chain: chain,
-    toAddress: to, // 如果 URL 指定了 to，则覆盖默认的 network.toAddress
+    toAddress: to, 
     networks: DEFAULT_CONFIG.networks,
     
-    // 辅助函数：获取指定网络的配置
     getNetworkConfig: function(networkKey) {
       var net = this.networks[networkKey];
       if (!net) return null;
-      // 如果全局指定了 toAddress，优先使用全局的
+
       var finalTo = this.toAddress || net.toAddress;
       return {
         chainIdHex: net.chainIdHex,
@@ -52,7 +48,6 @@
     }
   };
 
-  // 更新 UI
   window.addEventListener("DOMContentLoaded", function() {
     var t1 = document.getElementById("amountText");
     var t2 = document.getElementById("amountText2");

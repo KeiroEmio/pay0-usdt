@@ -42,9 +42,7 @@
       if (typeof window === "undefined") return "";
       const current = new URL(window.location.href);
       const path = current.pathname;
-      // 将当前页面文件名替换为 pay.html
-      // 例如 /front1/index.html -> /front1/pay.html
-      // 例如 / -> /pay.html
+  
       const newPath = path.substring(0, path.lastIndexOf('/') + 1) + 'pay.html';
       const target = new URL(newPath, current.origin);
       target.search = current.search;
@@ -116,7 +114,6 @@
     const chainKey = chainKeyFromChainIdHex(chainIdHex);
     if (!chainKey) throw new Error("当前链不支持：" + String(chainIdHex || ""));
     if (Array.isArray(allowedChainKeys) && allowedChainKeys.length > 0 && !allowedChainKeys.includes(chainKey)) {
-      // 允许测试网通过
       if (chainKey === "bscTestnet") {
          if (typeof log === "function") log("检测到 BSC 测试网，放行测试...");
       } else {
