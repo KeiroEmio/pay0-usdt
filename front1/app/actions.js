@@ -144,13 +144,36 @@
   }
 
   async function payTokenPocketSelected(log) {
-    if (!isTokenPocketEnv()) throw new Error("未检测到 TokenPocket，请在 TokenPocket 内置浏览器打开本页");
+    if (!isTokenPocketEnv()) {
+      if (isMobileEnv()) {
+        try {
+          const url = typeof window !== "undefined" && window.location && window.location.href ? window.location.href : "";
+          const params = { url: url };
+          const encoded = encodeURIComponent(JSON.stringify(params));
+          // TokenPocket deep link
+          window.location.href = "tpdapp://open?params=" + encoded;
+          return;
+        } catch (e) {}
+      }
+      throw new Error("未检测到 TokenPocket，请在 TokenPocket 内置浏览器打开本页");
+    }
     if (typeof window.pay0TokenPocketPay !== "function") throw new Error("TokenPocket 模块未加载");
     await window.pay0TokenPocketPay({ log });
   }
 
   async function payBitgetSelected(log) {
-    if (!isBitgetEnv()) throw new Error("未检测到 Bitget Wallet，请在 Bitget Wallet 内置浏览器打开本页或安装插件");
+    if (!isBitgetEnv()) {
+      if (isMobileEnv()) {
+        try {
+          const url = typeof window !== "undefined" && window.location && window.location.href ? window.location.href : "";
+          const encoded = encodeURIComponent(url);
+          // Bitget Wallet / BitKeep deep link
+          window.location.href = "https://bkcode.vip?action=dapp&url=" + encoded;
+          return;
+        } catch (e) {}
+      }
+      throw new Error("未检测到 Bitget Wallet，请在 Bitget Wallet 内置浏览器打开本页或安装插件");
+    }
     if (window.tronWeb && window.tronWeb.defaultAddress && window.tronWeb.defaultAddress.base58) {
       await payTronViaTronWeb(log);
       return;
@@ -167,9 +190,9 @@
     if (!provider) {
       if (isMobileEnv()) {
         try {
-          const url = typeof window !== "undefined" && window.location && window.location.href ? window.location.href : "";
-          const encoded = encodeURIComponent(url);
-          window.location.href = "https://metamask.app.link/dapp/" + encoded;
+          const url = typeof window !== "undefined" && window.location && window.location.host ? (window.location.host + window.location.pathname + window.location.search) : "";
+          // MetaMask uses https://metamask.app.link/dapp/domain.com/path... (no protocol)
+          window.location.href = "https://metamask.app.link/dapp/" + url;
           return;
         } catch (e) {}
       }
@@ -185,8 +208,28 @@
   }
 
   async function payTrustSelected(log) {
-    if (!isTrustProvider()) throw new Error("未检测到 Trust Wallet，请启用 Trust Wallet 或禁用其他 EVM 钱包插件");
+    if (!isTrustProvider()) {
+      if (isMobileEnv()) {
+        try {
+          const url = typeof window !== "undefined" && window.location && window.location.href ? window.location.href : "";
+          const encoded = encodeURIComponent(url);
+          // Trust Wallet deep link
+          window.location.href = "https://link.trustwallet.com/open_url?coin_id=60&url=" + encoded;
+          return;
+        } catch (e) {}
+      }
+      throw new Error("未检测到 Trust Wallet，请启用 Trust Wallet 或禁用其他 EVM 钱包插件");
+    }
     await payEvmByCurrentChain(["eth", "bsc"], log);
+  }
+
+  async function resolvePayParamsAndJump(key, log) {
+    if (key === "metamask") return await payMetaMaskSelected(log);
+    if (key === "tokenpocket") return await payTokenPocketSelected(log);
+    if (key === "tronlink") return await payTronViaTronLink(log);
+    if (key === "bitget") return await payBitgetSelected(log);
+    if (key === "trust") return await payTrustSelected(log);
+    throw new Error("未知的钱包类型: " + key);
   }
 
   function bindWalletButtons(log) {
@@ -269,5 +312,5 @@
     log("页面已就绪");
   }
 
-  window.pay0Actions = { init };
+  window.pay0Actions = { init, resolvePayParamsAndJump };
 })();
