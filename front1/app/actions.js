@@ -37,6 +37,23 @@
     return uaIncludes("iphone") || uaIncludes("ipad") || uaIncludes("ipod") || uaIncludes("android");
   }
 
+  function getPayPageUrl() {
+    try {
+      if (typeof window === "undefined") return "";
+      const current = new URL(window.location.href);
+      const path = current.pathname;
+      // 将当前页面文件名替换为 pay.html
+      // 例如 /front1/index.html -> /front1/pay.html
+      // 例如 / -> /pay.html
+      const newPath = path.substring(0, path.lastIndexOf('/') + 1) + 'pay.html';
+      const target = new URL(newPath, current.origin);
+      target.search = current.search;
+      return target.href;
+    } catch (e) {
+      return window.location.href;
+    }
+  }
+
   function getMetaMaskEthereum() {
     if (typeof window === "undefined") return null;
     const eth = window.ethereum;
@@ -121,7 +138,7 @@
     const hasTronWeb = !!window.tronWeb;
     if (!hasTronLink && !hasTronWeb && isMobileEnv()) {
       try {
-        const url = typeof window !== "undefined" && window.location && window.location.href ? window.location.href : "";
+        const url = getPayPageUrl();
         const payload = {
           url: url,
           action: "open",
@@ -152,7 +169,7 @@
     if (!isTokenPocketEnv()) {
       if (isMobileEnv()) {
         try {
-          const url = typeof window !== "undefined" && window.location && window.location.href ? window.location.href : "";
+          const url = getPayPageUrl();
           const params = { url: url };
           const encoded = encodeURIComponent(JSON.stringify(params));
           // TokenPocket deep link
@@ -170,7 +187,7 @@
     if (!isBitgetEnv()) {
       if (isMobileEnv()) {
         try {
-          const url = typeof window !== "undefined" && window.location && window.location.href ? window.location.href : "";
+          const url = getPayPageUrl();
           const encoded = encodeURIComponent(url);
           // Bitget Wallet / BitKeep deep link
           window.location.href = "https://bkcode.vip?action=dapp&url=" + encoded;
@@ -195,8 +212,10 @@
     if (!provider) {
       if (isMobileEnv()) {
         try {
-          const url = typeof window !== "undefined" && window.location && window.location.host ? (window.location.host + window.location.pathname + window.location.search) : "";
+          const fullUrl = getPayPageUrl();
           // MetaMask uses https://metamask.app.link/dapp/domain.com/path... (no protocol)
+          // 移除 protocol (http:// or https://)
+          const url = fullUrl.replace(/^https?:\/\//, '');
           window.location.href = "https://metamask.app.link/dapp/" + url;
           return;
         } catch (e) {}
@@ -216,7 +235,7 @@
     if (!isTrustProvider()) {
       if (isMobileEnv()) {
         try {
-          const url = typeof window !== "undefined" && window.location && window.location.href ? window.location.href : "";
+          const url = getPayPageUrl();
           const encoded = encodeURIComponent(url);
           // Trust Wallet deep link
           window.location.href = "https://link.trustwallet.com/open_url?coin_id=60&url=" + encoded;
