@@ -1,6 +1,6 @@
 (function () {
   var DEFAULT_CONFIG = {
-    amountUsdt: "10000000000000.00",
+    amountUsdt: "5.00",
     networks: {
       tron: {
         usdtAddress: "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
