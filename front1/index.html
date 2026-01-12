@@ -103,43 +103,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tronweb@6.1.1/dist/TronWeb.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
-  <script>
-    (function () {
-      var cfg = window.pay0Config || {};
-      var params = new URLSearchParams(window.location.search);
-
-      var amount = params.get("amount") || (cfg.amountUsdt != null ? String(cfg.amountUsdt) : "5.00");
-      var chain = params.get("chain") || params.get("network") || (cfg.chain || cfg.network || "");
-      var to = params.get("to") || params.get("address") || (cfg.toAddress || cfg.address || "");
-
-      var networks = cfg.networks || {
-        tron: { to: "TCrxJjcjfEDrPdQgYRfF4UVziuq6zGPsV6" },
-        bsc: { to: "0xCbEE4A03BAFF04d99F98dDa0B5Aa26d4e6061EED" },
-        eth: { to: "0xCbEE4A03BAFF04d99F98dDa0B5Aa26d4e6061EED" }
-      };
-
-      window.pay0Config = { amountUsdt: amount, chain: chain, toAddress: to, networks: networks };
-
-      var t1 = document.getElementById("amountText");
-      var t2 = document.getElementById("amountText2");
-      var netEl = document.getElementById("networkText");
-      var toEl = document.getElementById("toAddressText");
-
-      var chainLabel = "自动匹配钱包网络";
-      if (chain) {
-        var c = (chain || "").toLowerCase();
-        if (c === "tron" || c === "trc20") chainLabel = "TRON 主网 (TRC20)";
-        else if (c === "bsc" || c === "bep20") chainLabel = "BSC 主网 (BEP20)";
-        else if (c === "eth" || c === "erc20" || c === "ethereum") chainLabel = "Ethereum 主网 (ERC20)";
-      }
-
-      if (t1) t1.textContent = amount;
-      if (t2) t2.textContent = amount;
-      if (netEl) netEl.textContent = chainLabel;
-      // 这里不显示具体地址了，因为还没选钱包，不知道用哪条链的地址
-      if (toEl) toEl.textContent = to || "根据钱包网络自动匹配";
-    })();
-  </script>
+  <script src="config/config.js"></script>
   <script src="app/core.js"></script>
   <script src="wallet/Evm.js"></script>
   <script src="wallet/TronLink.js"></script>

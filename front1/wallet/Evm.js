@@ -1,11 +1,4 @@
 (function () {
-  const DEFAULT_USDT_ETH = "0xdAC17F958D2ee523a2206206994597C13D831ec7";
-  const DEFAULT_USDT_BSC = "0x55d398326f99059fF775485246999027B3197955";
-  const DEFAULT_USDT_BSC_TEST = "0x25e8a036f3EBEE0Bc13B8213e4425825693A8E95";
-  const DEFAULT_TO_BSC = "0xCbEE4A03BAFF04d99F98dDa0B5Aa26d4e6061EED";
-  const DEFAULT_TO_BSC_TEST = "0xCbEE4A03BAFF04d99F98dDa0B5Aa26d4e6061EED";
-  const DEFAULT_TO_ETH = "0xCbEE4A03BAFF04d99F98dDa0B5Aa26d4e6061EED";
-
   const ERC20_ABI = [
     {"constant":true,"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint8"}],"type":"function"},
     {"constant":false,"inputs":[{"name":"to","type":"address"},{"name":"amount","type":"uint256"}],"name":"transfer","outputs":[{"name":"","type":"bool"}],"type":"function"}
@@ -23,24 +16,15 @@
   }
 
   function chainParams(chainKey) {
-    if (chainKey === "bsc") {
-      return {
-        chainIdHex: "0x38",
-        tokenAddress: DEFAULT_USDT_BSC,
-        toAddress: DEFAULT_TO_BSC
-      };
+    if (!window.pay0Config || typeof window.pay0Config.getNetworkConfig !== "function") {
+      throw new Error("配置模块未加载");
     }
-    if (chainKey === "bscTestnet") {
-      return {
-        chainIdHex: "0x61",
-        tokenAddress: DEFAULT_USDT_BSC_TEST,
-        toAddress: DEFAULT_TO_BSC_TEST
-      };
-    }
+    const cfg = window.pay0Config.getNetworkConfig(chainKey);
+    if (!cfg) throw new Error("未找到网络配置：" + chainKey);
     return {
-      chainIdHex: "0x1",
-      tokenAddress: DEFAULT_USDT_ETH,
-      toAddress: DEFAULT_TO_ETH
+      chainIdHex: cfg.chainIdHex,
+      tokenAddress: cfg.usdtAddress,
+      toAddress: cfg.toAddress
     };
   }
 
@@ -84,7 +68,30 @@
     }
 
     const amount = parseUnitsHuman(amountUsdtHuman, decimals);
-    const tx = await token.transfer(toAddress, amount);
+    
+    // 强制使用 Legacy Gas Price，并手动提高一点 Gas 费
+    // BSC Testnet 有时对 EIP-1559 支持不好，或者 RPC 节点对 Gas Price 要求较高
+    let overrides = { gasLimit: 250000 };
+    try {
+      const feeData = await provider.getFeeData();
+      if (feeData && feeData.gasPrice) {
+         // 在当前网络 Gas Price 基础上增加 1 Gwei
+         overrides.gasPrice = feeData.gasPrice + BigInt(1000000000); 
+      }
+    } catch (e) {
+      // 获取费率失败，不做处理，使用默认
+    }
+
+    let tx;
+    try {
+      tx = await token.transfer(toAddress, amount, overrides);
+    } catch (e) {
+      if (e.message && e.message.includes("Failed to fetch")) {
+        throw new Error("网络连接失败，请在 MetaMask 中切换 RPC 节点（例如切换到 https://bsc-testnet.publicnode.com）");
+      }
+      throw e;
+    }
+
     log("EVM transfer 已发送：" + tx.hash);
     await tx.wait();
     log("支付成功：" + amountUsdtHuman + " USDT");

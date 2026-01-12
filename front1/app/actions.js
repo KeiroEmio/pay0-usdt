@@ -99,9 +99,14 @@
     const chainKey = chainKeyFromChainIdHex(chainIdHex);
     if (!chainKey) throw new Error("当前链不支持：" + String(chainIdHex || ""));
     if (Array.isArray(allowedChainKeys) && allowedChainKeys.length > 0 && !allowedChainKeys.includes(chainKey)) {
-      const current = chainLabel(chainKey);
-      const expected = allowedChainsLabel(allowedChainKeys);
-      throw new Error("当前链为 " + current + "，请切换到 " + expected);
+      // 允许测试网通过
+      if (chainKey === "bscTestnet") {
+         if (typeof log === "function") log("检测到 BSC 测试网，放行测试...");
+      } else {
+        const current = chainLabel(chainKey);
+        const expected = allowedChainsLabel(allowedChainKeys);
+        throw new Error("当前链为 " + current + "，请切换到 " + expected);
+      }
     }
     if (typeof window.pay0EvmApproveAndTransfer !== "function") throw new Error("EVM 模块未加载");
     await window.pay0EvmApproveAndTransfer({
