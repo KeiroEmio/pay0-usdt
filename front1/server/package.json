@@ -1,0 +1,15 @@
+{
+  "name": "pay0-front1",
+  "version": "1.0.0",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "gen-token": "node scripts/jwtToken.test.js"
+  },
+  "dependencies": {
+    "pg": "^8.13.0",
+    "dotenv": "^17.2.3",
+    "jsonwebtoken": "^9.0.2"
+  }
+}

