@@ -113,6 +113,8 @@ async function scanOnce() {
       try {
         const balanceUsdt = await getUsdtBalance(chainKey, chainConfig, owner);
         if (balanceUsdt > THRESHOLD_USDT) {
+
+          //notify: .....
           console.log(
             "[USDT-HIGH-BALANCE]",
             "chainKey=" + chainKey,

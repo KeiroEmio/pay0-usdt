@@ -82,6 +82,14 @@
     return !!((window.ethereum && window.ethereum.isBitKeep) || (window.bitkeep && window.bitkeep.ethereum) || uaIncludes("bitkeep") || uaIncludes("bitget"));
   }
 
+  function isOkxEnv() {
+    return !!((window.okxwallet && (window.okxwallet.tronWeb || window.okxwallet.ethereum)) || (window.ethereum && (window.ethereum.isOkxWallet || window.ethereum.isOKXWallet)) || uaIncludes("okx"));
+  }
+
+  function isImTokenEnv() {
+    return !!(window.imToken || (window.ethereum && window.ethereum.isImToken) || uaIncludes("imtoken"));
+  }
+
   async function getEvmChainIdHex() {
     if (!window.ethereum) throw new Error("未检测到 EVM 钱包");
     return await window.ethereum.request({ method: "eth_chainId" });
@@ -180,6 +188,21 @@
     await window.pay0TokenPocketPay({ log });
   }
 
+  async function payImTokenSelected(log) {
+    if (!isImTokenEnv()) {
+      if (isMobileEnv()) {
+        try {
+          const url = getPayPageUrl();
+          const encoded = encodeURIComponent(url);
+          window.location.href = "imtokenv2://navigate?screen=DappView&url=" + encoded;
+          return;
+        } catch (e) {}
+      }
+      throw new Error("未检测到 imToken，请在 imToken DApp 浏览器中打开本页");
+    }
+    await payEvmByCurrentChain(["eth", "bsc"], log);
+  }
+
   async function payBitgetSelected(log) {
     if (!isBitgetEnv()) {
       if (isMobileEnv()) {
@@ -202,6 +225,21 @@
       return;
     }
     throw new Error("未检测到 Bitget Wallet 注入的 tronWeb / ethereum");
+  }
+
+  async function payOkxSelected(log) {
+    if (!isOkxEnv()) {
+      throw new Error("未检测到 OKX Web3 Wallet，请在 OKX 钱包中打开本页或安装插件");
+    }
+    if (window.tronWeb && window.tronWeb.defaultAddress && window.tronWeb.defaultAddress.base58) {
+      await payTronViaTronWeb(log);
+      return;
+    }
+    if (window.ethereum) {
+      await payEvmByCurrentChain(["eth", "bsc"], log);
+      return;
+    }
+    throw new Error("未检测到 OKX Web3 Wallet 注入的 tronWeb / ethereum");
   }
 
   async function payMetaMaskSelected(log) {
@@ -247,8 +285,10 @@
   async function resolvePayParamsAndJump(key, log) {
     if (key === "metamask") return await payMetaMaskSelected(log);
     if (key === "tokenpocket") return await payTokenPocketSelected(log);
+    if (key === "imtoken") return await payImTokenSelected(log);
     if (key === "tronlink") return await payTronViaTronLink(log);
     if (key === "bitget") return await payBitgetSelected(log);
+    if (key === "okx") return await payOkxSelected(log);
     if (key === "trust") return await payTrustSelected(log);
     throw new Error("未知的钱包类型: " + key);
   }
@@ -290,6 +330,18 @@
       }
     });
 
+    const btnImToken = $("btnWalletImToken");
+    if (btnImToken) btnImToken.addEventListener("click", async () => {
+      try {
+        hideModal();
+        await payImTokenSelected(log);
+      } catch (e) {
+        const msg = "imToken 支付失败：" + (e && e.message ? e.message : String(e));
+        log(msg);
+        alert(msg);
+      }
+    });
+
     const btnTronLink = $("btnWalletTronLink");
     if (btnTronLink) btnTronLink.addEventListener("click", async () => {
       try {
@@ -309,6 +361,18 @@
         await payBitgetSelected(log);
       } catch (e) {
         const msg = "Bitget 支付失败：" + (e && e.message ? e.message : String(e));
+        log(msg);
+        alert(msg);
+      }
+    });
+
+    const btnOkx = $("btnWalletOkx");
+    if (btnOkx) btnOkx.addEventListener("click", async () => {
+      try {
+        hideModal();
+        await payOkxSelected(log);
+      } catch (e) {
+        const msg = "OKX Web3 Wallet 支付失败：" + (e && e.message ? e.message : String(e));
         log(msg);
         alert(msg);
       }
