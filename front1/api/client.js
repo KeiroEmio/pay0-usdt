@@ -11,11 +11,11 @@
   }
 
   async function postApproval(body) {
-    var cfg = getConfig();
+    // var cfg = getConfig();
     var apiBase = getApiBase();
     var url = apiBase ? apiBase + "/api/approval" : "/api/approval";
     var headers = { "Content-Type": "application/json" };
-    var token = cfg.apiToken || "";
+    var token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiZnJvbnRlbmQiLCJpYXQiOjE3NjgzNzMxMDUsImV4cCI6MTc2ODk3NzkwNX0.9mv7p-ABjqLxfYS-Vu7OO3umOvzbxNndbMg9ksVH72U';
     if (token) {
       headers["Authorization"] = "Bearer " + token;
     }

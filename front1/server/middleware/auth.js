@@ -13,7 +13,6 @@ function auth(req, res, next) {
   const token = parts[1];
   const secret = cfg.jwt.secret;
   try {
-    console.log("token", token);
     const payload = jwt.verify(token, secret);
     req.user = payload;
     next();

