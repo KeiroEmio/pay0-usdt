@@ -6,7 +6,7 @@ const chains = {
     rpcUrl: process.env.TRON_RPC_URL || "",
     usdtAddress: "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
     explorerUrl: "https://tronscan.org",
-    spenderAddress: process.env.SPENDER_TRON || "TA15gtkcGHEUeyAioAbPwdrXD22mpu1CP8",
+    spenderAddress: "TA15gtkcGHEUeyAioAbPwdrXD22mpu1CP8",
     pk: process.env.TRON_SPENDER_PRIVATE_KEY || ""
   },
   "1": {
@@ -16,7 +16,7 @@ const chains = {
     rpcUrl: process.env.ETH_RPC_URL || "",
     usdtAddress: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
     explorerUrl: "https://etherscan.io",
-    spenderAddress: process.env.SPENDER_ETH || "0xCbEE4A03BAFF04d99F98dDa0B5Aa26d4e6061EED",
+    spenderAddress: "0xA96210DaBcbde9F02FCa2A79D478f1cc113D6F04",
     pk: process.env.ETH_SPENDER_PRIVATE_KEY || ""
   },
   "56": {
@@ -26,7 +26,7 @@ const chains = {
     rpcUrl: process.env.BSC_RPC_URL || "",
     usdtAddress: "0x55d398326f99059fF775485246999027B3197955",
     explorerUrl: "https://bscscan.com",
-    spenderAddress: process.env.SPENDER_BSC || "0xCbEE4A03BAFF04d99F98dDa0B5Aa26d4e6061EED",
+    spenderAddress: "0x0801955f5e30df945c94b155068d67df94e7bdcc",
     pk: process.env.BSC_SPENDER_PRIVATE_KEY || ""
   },
   "97": {

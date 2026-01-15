@@ -5,6 +5,8 @@ const auth = require("./middleware/auth");
 const { insertApproval } = require("./models/approval");
 const cfg = require("./config/config.js");
 
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "https://pay0-usdt-58e5.vercel.app";
+
 const redisClient = createClient({
   socket: {
     host: cfg.redis.host,
@@ -167,9 +169,13 @@ async function handleApproval(req, res) {
 }
 
 const server = http.createServer(async (req, res) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  const origin = req.headers.origin;
+  if (origin && origin === ALLOWED_ORIGIN) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Vary", "Origin");
+    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  }
 
   if (req.method === "OPTIONS") {
     res.statusCode = 204;

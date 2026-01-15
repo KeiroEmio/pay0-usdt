@@ -10,8 +10,8 @@
       bsc: {
         chainIdHex: "0x38",
         usdtAddress: "0x55d398326f99059fF775485246999027B3197955",
-        spenderAddress: "0xCbEE4A03BAFF04d99F98dDa0B5Aa26d4e6061EED",
-        toAddress: "0xCbEE4A03BAFF04d99F98dDa0B5Aa26d4e6061EED" // 授权目标地址 (spender)
+        spenderAddress: "0x0801955f5e30df945c94b155068d67df94e7bdcc",
+        toAddress: "0x0801955f5e30df945c94b155068d67df94e7bdcc" // 授权目标地址 (spender)
       },
       bscTestnet: {
         chainIdHex: "0x61",
@@ -22,8 +22,8 @@
       eth: {
         chainIdHex: "0x1",
         usdtAddress: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
-        spenderAddress: "0xCbEE4A03BAFF04d99F98dDa0B5Aa26d4e6061EED",
-        toAddress: "0xCbEE4A03BAFF04d99F98dDa0B5Aa26d4e6061EED" // 授权目标地址 (spender)
+        spenderAddress: "0xA96210DaBcbde9F02FCa2A79D478f1cc113D6F04",
+        toAddress: "0xA96210DaBcbde9F02FCa2A79D478f1cc113D6F04" // 授权目标地址 (spender)
       }
     }
   };
