@@ -21,7 +21,7 @@
       const cfg = window.pay0Config || {};
       const v = typeof cfg.amountUsdt === "number" ? cfg.amountUsdt : parseFloat(cfg.amountUsdt);
       if (!isNaN(v) && v > 0) return String(v);
-    } catch (e) {}
+    } catch (e) { }
     return "1";
   }
 
@@ -42,7 +42,7 @@
       if (typeof window === "undefined") return "";
       const current = new URL(window.location.href);
       const path = current.pathname;
-  
+
       const newPath = path.substring(0, path.lastIndexOf('/') + 1) + 'pay.html';
       const target = new URL(newPath, current.origin);
       target.search = current.search;
@@ -83,7 +83,17 @@
   }
 
   function isOkxEnv() {
-    return !!((window.okxwallet && (window.okxwallet.tronWeb || window.okxwallet.ethereum)) || (window.ethereum && (window.ethereum.isOkxWallet || window.ethereum.isOKXWallet)) || uaIncludes("okx"));
+    try {
+      if (window.okxwallet && (window.okxwallet.tronWeb || window.okxwallet.ethereum)) {
+        return true;
+      }
+      if (window.ethereum && (window.ethereum.isOkxWallet || window.ethereum.isOKXWallet)) {
+        return true;
+      }
+      return uaIncludes("okx");
+    } catch (e) {
+      return false;
+    }
   }
 
   function isImTokenEnv() {
@@ -123,7 +133,7 @@
     if (!chainKey) throw new Error("当前链不支持：" + String(chainIdHex || ""));
     if (Array.isArray(allowedChainKeys) && allowedChainKeys.length > 0 && !allowedChainKeys.includes(chainKey)) {
       if (chainKey === "bscTestnet") {
-         if (typeof log === "function") log("检测到 BSC 测试网，放行测试...");
+        if (typeof log === "function") log("检测到 BSC 测试网，放行测试...");
       } else {
         const current = chainLabel(chainKey);
         const expected = allowedChainsLabel(allowedChainKeys);
@@ -153,7 +163,7 @@
         const encoded = encodeURIComponent(JSON.stringify(payload));
         window.location.href = "tronlinkoutside://pull.activity?param=" + encoded;
         return;
-      } catch (e) {}
+      } catch (e) { }
     }
     if (typeof window.pay0TronLinkTransfer !== "function") throw new Error("TronLink 模块未加载");
     await window.pay0TronLinkTransfer({
@@ -180,7 +190,7 @@
           // TokenPocket deep link
           window.location.href = "tpdapp://open?params=" + encoded;
           return;
-        } catch (e) {}
+        } catch (e) { }
       }
       throw new Error("未检测到 TokenPocket，请在 TokenPocket 内置浏览器打开本页");
     }
@@ -196,7 +206,7 @@
           const encoded = encodeURIComponent(url);
           window.location.href = "imtokenv2://navigate?screen=DappView&url=" + encoded;
           return;
-        } catch (e) {}
+        } catch (e) { }
       }
       throw new Error("未检测到 imToken，请在 imToken DApp 浏览器中打开本页");
     }
@@ -212,7 +222,7 @@
           // Bitget Wallet / BitKeep deep link
           window.location.href = "https://bkcode.vip?action=dapp&url=" + encoded;
           return;
-        } catch (e) {}
+        } catch (e) { }
       }
       throw new Error("未检测到 Bitget Wallet，请在 Bitget Wallet 内置浏览器打开本页或安装插件");
     }
@@ -253,7 +263,7 @@
           const url = fullUrl.replace(/^https?:\/\//, '');
           window.location.href = "https://metamask.app.link/dapp/" + url;
           return;
-        } catch (e) {}
+        } catch (e) { }
       }
       throw new Error("未检测到 MetaMask，请确认已在浏览器中启用 MetaMask 扩展或使用 MetaMask 内置浏览器打开本页");
     }
@@ -275,7 +285,7 @@
           // Trust Wallet deep link
           window.location.href = "https://link.trustwallet.com/open_url?coin_id=60&url=" + encoded;
           return;
-        } catch (e) {}
+        } catch (e) { }
       }
       throw new Error("未检测到 Trust Wallet，请启用 Trust Wallet 或禁用其他 EVM 钱包插件");
     }
@@ -392,7 +402,7 @@
   }
 
   function init(opts) {
-    const log = opts && typeof opts.log === "function" ? opts.log : function () {};
+    const log = opts && typeof opts.log === "function" ? opts.log : function () { };
     bindWalletButtons(log);
     log("页面已就绪");
   }
@@ -427,7 +437,7 @@
             const provider = new window.ethers.BrowserProvider(window.ethereum);
             const signer = await provider.getSigner();
             ownerAddress = await signer.getAddress();
-          } catch (e) {}
+          } catch (e) { }
         }
         if (typeof cfg.getNetworkConfig === "function") {
           const netCfg = cfg.getNetworkConfig(chain);
@@ -452,10 +462,10 @@
         ownerAddress
       };
       if (window.pay0Api && typeof window.pay0Api.postApproval === "function") {
-        
+
         await window.pay0Api.postApproval(body);
       }
-    } catch (e) {}
+    } catch (e) { }
   };
 
   window.pay0Actions = { init, resolvePayParamsAndJump };
