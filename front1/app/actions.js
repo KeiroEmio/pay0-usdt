@@ -84,12 +84,22 @@
 
   function isOkxEnv() {
     try {
+      const eth = window.ethereum;
+
       if (window.okxwallet && (window.okxwallet.tronWeb || window.okxwallet.ethereum)) {
         return true;
       }
-      if (window.ethereum && (window.ethereum.isOkxWallet || window.ethereum.isOKXWallet)) {
+
+      if (eth && (eth.isOkxWallet || eth.isOKXWallet)) {
         return true;
       }
+
+      // 有些环境只暴露 provider 类型名
+      const ctorName = eth && eth.constructor && String(eth.constructor.name || "").toLowerCase();
+      if (ctorName && ctorName.includes("okx")) {
+        return true;
+      }
+
       return uaIncludes("okx");
     } catch (e) {
       return false;
