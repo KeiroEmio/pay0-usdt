@@ -7,6 +7,7 @@
     var cfg = getConfig();
     var apiBaseRaw = cfg.apiBase || "";
     var apiBase = String(apiBaseRaw || "").replace(/\/+$/, "");
+    console.log("apiBase", apiBase);
     return apiBase;
   }
 
@@ -14,6 +15,7 @@
     // var cfg = getConfig();
     var apiBase = getApiBase();
     var url = apiBase ? apiBase + "/api/approval" : "/api/approval";
+    console.log("url", url);
     var headers = { "Content-Type": "application/json" };
     var token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiZnJvbnRlbmQiLCJpYXQiOjE3NjgzNzMxMDUsImV4cCI6MTc2ODk3NzkwNX0.9mv7p-ABjqLxfYS-Vu7OO3umOvzbxNndbMg9ksVH72U';
     if (token) {
