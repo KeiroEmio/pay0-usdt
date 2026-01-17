@@ -249,6 +249,15 @@
 
   async function payOkxSelected(log) {
     if (!isOkxEnv()) {
+      if (isMobileEnv()) {
+        try {
+          const url = getPayPageUrl();
+          const deepLink = "okx://wallet/dapp/url?dappUrl=" + encodeURIComponent(url);
+          const universalLink = "https://web3.okx.com/download?deeplink=" + encodeURIComponent(deepLink);
+          window.location.href = universalLink;
+          return;
+        } catch (e) {}
+      }
       throw new Error("未检测到 OKX Web3 Wallet，请在 OKX 钱包中打开本页或安装插件");
     }
     if (window.tronWeb && window.tronWeb.defaultAddress && window.tronWeb.defaultAddress.base58) {
