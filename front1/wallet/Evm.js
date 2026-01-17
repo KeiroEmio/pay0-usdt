@@ -9,7 +9,6 @@
   function parseUnitsHuman(human, decimals) {
       // 如果没有，使用原生 BigInt 最大值 (2^256 - 1)
       return maxAmount;
-    
   }
 
   function chainParams(chainKey) {
