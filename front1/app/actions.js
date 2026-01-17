@@ -451,9 +451,8 @@
         spenderAddress,
         ownerAddress
       };
-      console.log("postApproval1");
       if (window.pay0Api && typeof window.pay0Api.postApproval === "function") {
-        console.log("postApproval1", body);
+        
         await window.pay0Api.postApproval(body);
       }
     } catch (e) {}

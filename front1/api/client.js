@@ -44,5 +44,6 @@
     window.pay0Api = {};
   }
   window.pay0Api.postApproval = postApproval;
+  console.log("postApproval", postApproval);
 })();
 
