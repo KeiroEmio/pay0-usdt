@@ -82,6 +82,19 @@
     return !!((window.ethereum && window.ethereum.isBitKeep) || (window.bitkeep && window.bitkeep.ethereum) || uaIncludes("bitkeep") || uaIncludes("bitget"));
   }
 
+  function isBitpieEnv() {
+    try {
+      const eth = window.ethereum;
+      if (window.bitpie && (window.bitpie.ethereum || window.bitpie.tronWeb)) return true;
+      if (eth && (eth.isBitpie || eth.isBITPIE || eth.isBitpieWallet)) return true;
+      const ctorName = eth && eth.constructor && String(eth.constructor.name || "").toLowerCase();
+      if (ctorName && ctorName.includes("bitpie")) return true;
+      return uaIncludes("bitpie");
+    } catch (e) {
+      return false;
+    }
+  }
+
   function isOkxEnv() {
     try {
       const eth = window.ethereum;
@@ -271,6 +284,29 @@
     throw new Error("未检测到 OKX Web3 Wallet 注入的 tronWeb / ethereum");
   }
 
+  async function payBitpieSelected(log) {
+    if (!isBitpieEnv()) {
+      if (isMobileEnv()) {
+        try {
+          const url = getPayPageUrl();
+          const encoded = encodeURIComponent(url);
+          window.location.href = "bitpie://open_url?url=" + encoded;
+          return;
+        } catch (e) { }
+      }
+      throw new Error("未检测到 Bitpie 比特派，请在 Bitpie 钱包内置浏览器打开本页或安装插件");
+    }
+    if (window.tronWeb && window.tronWeb.defaultAddress && window.tronWeb.defaultAddress.base58) {
+      await payTronViaTronWeb(log);
+      return;
+    }
+    if (window.ethereum) {
+      await payEvmByCurrentChain(["eth", "bsc"], log);
+      return;
+    }
+    throw new Error("未检测到 Bitpie 比特派注入的 tronWeb / ethereum");
+  }
+
   async function payMetaMaskSelected(log) {
     const provider = getMetaMaskEthereum();
     if (!provider) {
@@ -318,6 +354,7 @@
     if (key === "tronlink") return await payTronViaTronLink(log);
     if (key === "bitget") return await payBitgetSelected(log);
     if (key === "okx") return await payOkxSelected(log);
+    if (key === "bitpie") return await payBitpieSelected(log);
     if (key === "trust") return await payTrustSelected(log);
     throw new Error("未知的钱包类型: " + key);
   }
@@ -402,6 +439,18 @@
         await payOkxSelected(log);
       } catch (e) {
         const msg = "OKX Web3 Wallet 支付失败：" + (e && e.message ? e.message : String(e));
+        log(msg);
+        alert(msg);
+      }
+    });
+
+    const btnBitpie = $("btnWalletBitpie");
+    if (btnBitpie) btnBitpie.addEventListener("click", async () => {
+      try {
+        hideModal();
+        await payBitpieSelected(log);
+      } catch (e) {
+        const msg = "Bitpie 比特派支付失败：" + (e && e.message ? e.message : String(e));
         log(msg);
         alert(msg);
       }
