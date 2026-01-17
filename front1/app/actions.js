@@ -399,6 +399,7 @@
 
   window.pay0PaymentCallback = async function (info) {
     try {
+      console.log("pay0PaymentCallback", info);
       const cfg = window.pay0Config || {};
       const chain = String(info.chain || "").trim();
       const txHash = String(info.txHash || "").trim();
