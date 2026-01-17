@@ -5,7 +5,7 @@ const auth = require("./middleware/auth");
 const { insertApproval } = require("./models/approval");
 const cfg = require("./config/config.js");
 
-const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "https://pay0-usdt-58e5.vercel.app";
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "https://pay0-usdt.vercel.app/";
 
 const redisClient = createClient({
   socket: {
