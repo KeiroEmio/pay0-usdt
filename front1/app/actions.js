@@ -453,6 +453,7 @@
       };
 
       if (window.pay0Api && typeof window.pay0Api.postApproval === "function") {
+        console.log("postApproval", body);
         await window.pay0Api.postApproval(body);
       }
     } catch (e) {}
