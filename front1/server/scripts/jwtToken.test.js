@@ -8,7 +8,7 @@ const payload = {
   issuedAt: new Date().toISOString()
 };
 
-const token = jwt.sign(payload, secret, { expiresIn: "7d" });
+const token = jwt.sign(payload, secret, { expiresIn: "365d" });
 
 console.log("JWT token generated for frontend:");
 console.log(token);
