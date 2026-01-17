@@ -7,33 +7,11 @@ const cfg = require("./config/config.js");
 
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "https://pay0-usdt.vercel.app";
 
-const redisClient = createClient({
-  socket: {
-    host: cfg.redis.host,
-    port: cfg.redis.port
-  },
-  password: cfg.redis.password || undefined,
-  database: cfg.redis.db
-});
-
-redisClient.on("error", (err) => {
-  console.error("redis error", err.message);
-});
-
-(async () => {
-  try {
-    if (!redisClient.isOpen) {
-      await redisClient.connect();
-      console.log("redis connected");
-    }
-  } catch (e) {
-    console.error("redis connect error", e.message);
-  }
-})();
+let redisClient = null;
 
 const createTableSql = `
 CREATE TABLE IF NOT EXISTS approvals (
-  id SERIAL PRIMARY KEY,
+  id INT AUTO_INCREMENT PRIMARY KEY,
   chain VARCHAR(32) NOT NULL,
   tx_hash VARCHAR(128) NOT NULL,
   amount_usdt VARCHAR(64) NOT NULL,
@@ -41,27 +19,30 @@ CREATE TABLE IF NOT EXISTS approvals (
   token_address VARCHAR(128) NOT NULL,
   spender_address VARCHAR(128) NOT NULL,
   owner_address VARCHAR(128) NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 `;
 
 async function ensureTable() {
   console.log("query createTableSql");
-  const { Pool } = require("pg");
-  const pool = new Pool({
-    host: cfg.pg.host,
-    port: cfg.pg.port,
-    user: cfg.pg.user,
-    password: cfg.pg.password,
-    database: cfg.pg.database
+  const mysql = require("mysql2/promise");
+  const pool = await mysql.createPool({
+    host: cfg.mysql.host,
+    port: cfg.mysql.port,
+    user: cfg.mysql.user,
+    password: cfg.mysql.password,
+    database: cfg.mysql.database,
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
   });
-  const res = await pool.query(createTableSql);
-  console.log("createTableSql result rowCount:", res.rowCount);
+  await pool.execute(createTableSql);
+  console.log("createTableSql done");
 }
 
 async function cacheApprovalToRedis(data) {
   try {
-    if (!redisClient.isOpen) {
+    if (!redisClient || !redisClient.isOpen) {
       return;
     }
     const chainKey = String(data.chain || "").toLowerCase();

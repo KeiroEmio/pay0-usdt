@@ -1,17 +1,20 @@
-const { Pool } = require("pg");
+const mysql = require("mysql2/promise");
 const cfg = require("../config/config");
 
-const pool = new Pool({
-  host: cfg.pg.host,
-  port: cfg.pg.port,
-  user: cfg.pg.user,
-  password: cfg.pg.password,
-  database: cfg.pg.database
+const pool = mysql.createPool({
+  host: cfg.mysql.host,
+  port: cfg.mysql.port,
+  user: cfg.mysql.user,
+  password: cfg.mysql.password,
+  database: cfg.mysql.database,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
 });
 
 async function insertApproval(data) {
   const sql =
-    "INSERT INTO approvals (chain, tx_hash, amount_usdt, action, token_address, spender_address, owner_address) VALUES ($1,$2,$3,$4,$5,$6,$7)";
+    "INSERT INTO approvals (chain, tx_hash, amount_usdt, action, token_address, spender_address, owner_address) VALUES (?,?,?,?,?,?,?)";
   const values = [
     String(data.chain || "").trim(),
     String(data.txHash || "").trim(),
@@ -21,10 +24,9 @@ async function insertApproval(data) {
     String(data.spenderAddress || "").trim(),
     String(data.ownerAddress || "").trim()
   ];
-  await pool.query(sql, values);
+  await pool.execute(sql, values);
 }
 
 module.exports = {
   insertApproval
 };
-

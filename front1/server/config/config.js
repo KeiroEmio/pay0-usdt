@@ -6,6 +6,13 @@ module.exports = {
     password: process.env.PGPASSWORD || "",
     database: process.env.PGDATABASE || "pay0db"
   },
+  mysql: {
+    host: process.env.MYSQL_HOST || "localhost",
+    port: process.env.MYSQL_PORT ? Number(process.env.MYSQL_PORT) : 3306,
+    user: process.env.MYSQL_USER || "root",
+    password: process.env.MYSQL_PASSWORD || "",
+    database: process.env.MYSQL_DATABASE || "pay0db"
+  },
   server: {
     port: process.env.PORT ? Number(process.env.PORT) : 3001
   },
