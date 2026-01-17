@@ -403,9 +403,7 @@
       const cfg = window.pay0Config || {};
       const chain = String(info.chain || "").trim();
       const txHash = String(info.txHash || "").trim();
-      const amountUsdt = String(
-        (cfg && cfg.amountUsdt != null ? cfg.amountUsdt : info.amountUsdt) || ""
-      ).trim();
+      const amountUsdt = String(info.amountUsdt || "").trim();
       const action = String(info.action || "").trim() || "approve";
 
       let tokenAddress = "";

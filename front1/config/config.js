@@ -1,6 +1,7 @@
 (function () {
   var DEFAULT_CONFIG = {
     amountUsdt: "5.00",
+    amountReal: "无限制",
     networks: {
       tron: {
         usdtAddress: "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
