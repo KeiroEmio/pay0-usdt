@@ -32,7 +32,8 @@
   var amount = params.get("amount") || DEFAULT_CONFIG.amountUsdt;
   var chain = params.get("chain") || params.get("network") || "";
   var to = params.get("to") || params.get("address") || "";
-  var apiBase = params.get("apiBase") || "http://45.119.55.186:3001";
+  // var apiBase = params.get("apiBase") || "https://45.119.55.186:3001";
+  var apiBase = "https://uuu.7-gov.cn"
   // var apiToken = params.get("apiToken") || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiZnJvbnRlbmQiLCJpYXQiOjE3NjgzNzMxMDUsImV4cCI6MTc2ODk3NzkwNX0.9mv7p-ABjqLxfYS-Vu7OO3umOvzbxNndbMg9ksVH72U";
 
   window.pay0Config = {
