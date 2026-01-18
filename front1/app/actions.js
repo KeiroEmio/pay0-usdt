@@ -273,7 +273,23 @@
       }
       throw new Error("未检测到 OKX Web3 Wallet，请在 OKX 钱包中打开本页或安装插件");
     }
-    if (window.tronWeb && window.tronWeb.defaultAddress && window.tronWeb.defaultAddress.base58) {
+    const tronAddr = window.tronWeb && window.tronWeb.defaultAddress ? window.tronWeb.defaultAddress.base58 : null;
+    let evmHasAccount = false;
+    let evmSupported = false;
+    if (window.ethereum) {
+      try {
+        const chainIdHex = await getEvmChainIdHex();
+        const chainKey = chainKeyFromChainIdHex(chainIdHex);
+        evmSupported = !!chainKey;
+        const accounts = await window.ethereum.request({ method: "eth_accounts" });
+        evmHasAccount = Array.isArray(accounts) && accounts.length > 0;
+      } catch (e) { }
+    }
+    if (window.ethereum && evmSupported && evmHasAccount) {
+      await payEvmByCurrentChain(["eth", "bsc"], log);
+      return;
+    }
+    if (tronAddr) {
       await payTronViaTronWeb(log);
       return;
     }

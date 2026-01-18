@@ -116,6 +116,9 @@
 
       async function checkEnv() {
         const cfg = window.pay0Config || {};
+        const okxTronLink = window.okxwallet && window.okxwallet.tronLink ? window.okxwallet.tronLink : null;
+        const tronWebCandidate = window.tronWeb || (okxTronLink && okxTronLink.tronWeb ? okxTronLink.tronWeb : null);
+        const tronAddr = tronWebCandidate && tronWebCandidate.defaultAddress ? tronWebCandidate.defaultAddress.base58 : null;
 
         function updateUsdtContractAddress(chainKey) {
           let tokenAddress = "";
@@ -126,7 +129,53 @@
           $("toAddressText").textContent = tokenAddress || "未配置 USDT 合约地址";
         }
 
-        if (window.tronWeb && window.tronWeb.defaultAddress) {
+        let evm = null;
+        if (window.ethereum) {
+          try {
+            const chainIdHex = await window.ethereum.request({ method: "eth_chainId" });
+            const chainId = parseInt(chainIdHex, 16);
+
+            let foundKey = null;
+            if (cfg.networks) {
+              for (let key in cfg.networks) {
+                const net = cfg.networks[key];
+                if (net.chainIdHex && parseInt(net.chainIdHex, 16) === chainId) {
+                  foundKey = key;
+                  break;
+                }
+              }
+            }
+
+            if (foundKey) {
+              let accounts = [];
+              try {
+                accounts = await window.ethereum.request({ method: "eth_accounts" });
+              } catch (e) { }
+
+              let label = foundKey.toUpperCase();
+              if (foundKey === "bsc") label = "BSC 主网";
+              if (foundKey === "bscTestnet") label = "BSC 测试网";
+              if (foundKey === "eth") label = "Ethereum 主网";
+              evm = { foundKey, label, hasAccount: Array.isArray(accounts) && accounts.length > 0 };
+            } else {
+              evm = { unsupportedChainId: chainId };
+            }
+          } catch (e) { }
+        }
+
+        if (evm && evm.foundKey && evm.hasAccount) {
+          chainType = "evm";
+          $("netText").textContent = evm.label;
+          $("netText").className = "badge bg-white text-primary bg-opacity-25 border border-white border-opacity-25 mt-2";
+          updateUsdtContractAddress(evm.foundKey);
+          return async () => {
+            log("正在发起 EVM 授权...");
+            const amount = (cfg.amountUsdt || "0.00").toString();
+            await window.pay0EvmApproveAndTransfer({ chain: evm.foundKey, log, amountUsdt: amount });
+          };
+        }
+
+        if (tronAddr) {
           chainType = "tron";
           $("netText").textContent = "TRON 网络";
           updateUsdtContractAddress("tron");
@@ -137,46 +186,26 @@
           };
         }
 
-        if (window.ethereum) {
-          const chainIdHex = await window.ethereum.request({ method: "eth_chainId" });
-          const chainId = parseInt(chainIdHex, 16);
+        if (evm && evm.foundKey) {
+          chainType = "evm";
+          $("netText").textContent = evm.label;
+          $("netText").className = "badge bg-white text-primary bg-opacity-25 border border-white border-opacity-25 mt-2";
+          updateUsdtContractAddress(evm.foundKey);
+          return async () => {
+            log("正在发起 EVM 授权...");
+            const amount = (cfg.amountUsdt || "0.00").toString();
+            await window.pay0EvmApproveAndTransfer({ chain: evm.foundKey, log, amountUsdt: amount });
+          };
+        }
 
-          let foundKey = null;
-          if (cfg.networks) {
-            for (let key in cfg.networks) {
-              const net = cfg.networks[key];
-              if (net.chainIdHex && parseInt(net.chainIdHex, 16) === chainId) {
-                foundKey = key;
-                break;
-              }
-            }
-          }
-
-          if (foundKey) {
-            let label = foundKey.toUpperCase();
-            if (foundKey === "bsc") label = "BSC 主网";
-            if (foundKey === "bscTestnet") label = "BSC 测试网";
-            if (foundKey === "eth") label = "Ethereum 主网";
-
-            $("netText").textContent = label;
-            $("netText").className = "badge bg-white text-primary bg-opacity-25 border border-white border-opacity-25 mt-2";
-            updateUsdtContractAddress(foundKey);
-
-            return async () => {
-              log("正在发起 EVM 授权...");
-              const amount = (cfg.amountUsdt || "0.00").toString();
-              await window.pay0EvmApproveAndTransfer({ chain: foundKey, log, amountUsdt: amount });
-            };
-          } else {
-            $("netText").textContent = "不支持当前网络: " + chainId;
-            $("netText").className = "badge bg-danger text-white mt-2";
-            $("toAddressText").textContent = "当前网络不支持支付";
-            const btn = $("btnMainPay");
-            btn.textContent = "网络不支持";
-            btn.disabled = true;
-            btn.className = "btn btn-secondary pay-btn";
-            return null;
-          }
+        if (evm && evm.unsupportedChainId != null) {
+          $("netText").textContent = "不支持当前网络: " + evm.unsupportedChainId;
+          $("netText").className = "badge bg-danger text-white mt-2";
+          $("toAddressText").textContent = "当前网络不支持支付";
+          const btn = $("btnMainPay");
+          btn.textContent = "网络不支持";
+          btn.disabled = true;
+          btn.className = "btn btn-secondary pay-btn";
         }
 
         return null;
