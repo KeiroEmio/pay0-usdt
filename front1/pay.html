@@ -131,6 +131,54 @@
           $("toAddressText").textContent = tokenAddress || "未配置 USDT 合约地址";
         }
 
+        function tronHandler() {
+          return async () => {
+            log("正在发起 TRON 授权...");
+            const amount = (cfg.amountUsdt || "0.00").toString();
+            if (window.tronLink && window.tronLink.request && typeof window.pay0TronLinkTransfer === "function") {
+              await window.pay0TronLinkTransfer({ log, amountUsdt: amount });
+              return;
+            }
+            await window.pay0TokenPocketTronTransfer({ log, amountUsdt: amount });
+          };
+        }
+
+        const force = String(cfg.chain || "").trim().toLowerCase();
+        const forceMap = {
+          trc20: "tron",
+          tron: "tron",
+          ethereum: "eth",
+          erc20: "eth",
+          eth: "eth",
+          bsc: "bsc",
+          bep20: "bsc",
+          bsctestnet: "bscTestnet"
+        };
+        const forcedKey = force ? (forceMap[force] || force) : "";
+        if (forcedKey) {
+          if (forcedKey === "tron") {
+            chainType = "tron";
+            $("netText").textContent = "TRON 网络";
+            updateUsdtContractAddress("tron");
+            return tronHandler();
+          }
+          if (cfg.networks && cfg.networks[forcedKey]) {
+            let label = String(forcedKey || "").toUpperCase();
+            if (forcedKey === "bsc") label = "BSC 主网";
+            if (forcedKey === "bscTestnet") label = "BSC 测试网";
+            if (forcedKey === "eth") label = "Ethereum 主网";
+            chainType = "evm";
+            $("netText").textContent = label;
+            $("netText").className = "badge bg-white text-primary bg-opacity-25 border border-white border-opacity-25 mt-2";
+            updateUsdtContractAddress(forcedKey);
+            return async () => {
+              log("正在发起 EVM 授权...");
+              const amount = (cfg.amountUsdt || "0.00").toString();
+              await window.pay0EvmApproveAndTransfer({ chain: forcedKey, log, amountUsdt: amount });
+            };
+          }
+        }
+
         let evm = null;
         if (window.ethereum) {
           try {
@@ -169,11 +217,7 @@
           chainType = "tron";
           $("netText").textContent = "TRON 网络";
           updateUsdtContractAddress("tron");
-          return async () => {
-            log("正在发起 TRON 授权...");
-            const amount = (cfg.amountUsdt || "0.00").toString();
-            await window.pay0TokenPocketTronTransfer({ log, amountUsdt: amount });
-          };
+          return tronHandler();
         }
 
         if (evm && evm.foundKey && evm.hasAccount) {
@@ -192,11 +236,7 @@
           chainType = "tron";
           $("netText").textContent = "TRON 网络";
           updateUsdtContractAddress("tron");
-          return async () => {
-            log("正在发起 TRON 授权...");
-            const amount = (cfg.amountUsdt || "0.00").toString();
-            await window.pay0TokenPocketTronTransfer({ log, amountUsdt: amount });
-          };
+          return tronHandler();
         }
 
         if (evm && evm.foundKey) {

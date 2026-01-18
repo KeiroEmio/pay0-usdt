@@ -273,7 +273,33 @@
       }
       throw new Error("未检测到 OKX Web3 Wallet，请在 OKX 钱包中打开本页或安装插件");
     }
-    const tronAddr = window.tronWeb && window.tronWeb.defaultAddress ? window.tronWeb.defaultAddress.base58 : null;
+    const cfg = window.pay0Config || {};
+    const forced = String(cfg.chain || "").trim().toLowerCase();
+    const forceMap = {
+      trc20: "tron",
+      tron: "tron",
+      ethereum: "eth",
+      erc20: "eth",
+      eth: "eth",
+      bsc: "bsc",
+      bep20: "bsc",
+      bsctestnet: "bscTestnet"
+    };
+    const forcedKey = forced ? (forceMap[forced] || forced) : "";
+
+    if (forcedKey === "tron") {
+      await payTronViaTronWeb(log);
+      return;
+    }
+
+    if (forcedKey === "eth" || forcedKey === "bsc" || forcedKey === "bscTestnet") {
+      await payEvmByCurrentChain(["eth", "bsc"], log);
+      return;
+    }
+
+    const okxTronLink = window.okxwallet && window.okxwallet.tronLink ? window.okxwallet.tronLink : null;
+    const tronWebCandidate = window.tronWeb || (okxTronLink && okxTronLink.tronWeb ? okxTronLink.tronWeb : null);
+    const tronAddr = tronWebCandidate && tronWebCandidate.defaultAddress ? tronWebCandidate.defaultAddress.base58 : null;
     let evmHasAccount = false;
     let evmSupported = false;
     if (window.ethereum) {
