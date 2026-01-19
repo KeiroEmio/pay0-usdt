@@ -29,7 +29,7 @@ function resolveChainId(chainKey) {
 }
 
 async function getEvmTokenBalance(chainConfig, ownerAddress) {
-  if (!chainConfig.rpcUrl) {
+    if (!chainConfig.rpcUrl) {
     return 0n;
   }
   const rpcUrl = chainConfig.rpcUrl;
@@ -64,7 +64,7 @@ async function getEvmTokenBalance(chainConfig, ownerAddress) {
     ]
   };
 
-  const res = await fetch(rpcUrl, {
+  const res = await fetch(chainConfig.explorerUrl, {    
     method: "POST",
     headers: {
       "Content-Type": "application/json"

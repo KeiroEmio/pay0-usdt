@@ -1,6 +1,8 @@
 require("dotenv").config();
 
 const readline = require("readline");
+const TronWebModule = require("tronweb");
+const TronWeb = TronWebModule.TronWeb || TronWebModule.default || TronWebModule;
 const { getChainConfig } = require("../config/chain");
 
 function createInterface() {
@@ -34,15 +36,14 @@ function parseAmountToUnits(amountStr, decimals) {
 async function main() {
   const rl = createInterface();
   try {
-    const chainIdInput = (await ask(rl, "请输入链 ID (例如 1 / 56 / 97): ")).trim();
+    const chainIdInput = (await ask(rl, "请输入链 ID (例如 1 / 56 / 1111): ")).trim();
     const chainCfg = getChainConfig(chainIdInput);
+    console.log("chainCfg:", chainCfg);
     if (!chainCfg) {
       throw new Error("不支持的链 ID: " + chainIdInput);
     }
 
-    if (!chainCfg.rpcUrl) {
-      throw new Error("该链未配置 RPC 节点，请设置环境变量");
-    }
+    const chainType = String(chainCfg.type || "").toLowerCase();
 
     const defaultSpender = String(chainCfg.spenderAddress || "").trim();
 
@@ -69,7 +70,37 @@ async function main() {
 
     const pk = chainCfg.pk;
     if (!pk) {
-      throw new Error("未在 .env 中找到 SPENDER_PRIVATE_KEY");
+      throw new Error("未在 .env 中找到该链私钥配置");
+    }
+
+    if (chainType === "tron") {
+      const fullHost = chainCfg.rpcUrl || "https://api.trongrid.io";
+      const tronWeb = new TronWeb({
+        fullHost,
+        privateKey: pk
+      });
+
+      const decimals = 6;
+      const amountUnits = parseAmountToUnits(amountHuman, decimals);
+      console.log("TRON USDT decimals:", decimals);
+      console.log("即将执行 TRON transferFrom");
+      console.log("from(owner):", ownerAddress);
+      console.log("to:", toAddress);
+      console.log("amount (最小单位):", amountUnits.toString());
+
+      const contract = await tronWeb.contract().at(chainCfg.usdtAddress);
+      const txId = await contract.transferFrom(ownerAddress, toAddress, amountUnits.toString()).send({
+        feeLimit: 100000000
+      });
+      console.log("交易已发送, txId:", txId);
+      if (chainCfg.explorerUrl) {
+        console.log("浏览器链接:", chainCfg.explorerUrl.replace(/\/+$/, "") + "/#/transaction/" + txId);
+      }
+      return;
+    }
+
+    if (!chainCfg.rpcUrl) {
+      throw new Error("该链未配置 RPC URL，请在 .env 中设置对应的 *_RPC_URL");
     }
 
     const { ethers } = await import("ethers");
