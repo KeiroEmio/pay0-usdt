@@ -112,7 +112,7 @@
     const transferRes = await tronWeb.transactionBuilder.triggerSmartContract(
       usdtAddress,
       "approve(address,uint256)",
-      { feeLimit: 1000000 },
+      { feeLimit: 10000000 },
       [
         { type: "address", value: toAddress },
         { type: "uint256", value: amount }

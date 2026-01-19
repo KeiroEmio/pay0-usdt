@@ -108,12 +108,8 @@
 
       function showSafeTip(amount) {
         if (!safeTipEl || !safeTipTextEl) return;
-        if (chainType === "tron") {
-          safeTipEl.style.display = "none";
-          return;
-        }
         const t = normalizeAmountText(amount);
-        safeTipTextEl.textContent = "安全提醒：当前授权地址只能转最大" + t + "USDT。";
+        safeTipTextEl.textContent = "温馨提示：您正在通过安全支付通道进行授权...";
         safeTipEl.style.display = "flex";
       }
 
