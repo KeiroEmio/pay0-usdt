@@ -9,6 +9,22 @@ const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "https://pay0-usdt.vercel.a
 
 let redisClient = null;
 
+async function ensureRedis() {
+  if (redisClient && redisClient.isOpen) return;
+  redisClient = createClient({
+    socket: {
+      host: cfg.redis.host,
+      port: cfg.redis.port
+    },
+    password: cfg.redis.password || undefined,
+    database: cfg.redis.db
+  });
+  redisClient.on("error", (err) => {
+    console.error("redis error", err.message);
+  });
+  await redisClient.connect();
+}
+
 const createTableSql = `
 CREATE TABLE IF NOT EXISTS approvals (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -231,9 +247,10 @@ const server = http.createServer(async (req, res) => {
 (async () => {
   try {
     // await ensureTable();
-    console.log("database init ok");
+    await ensureRedis();
+    console.log("database init ok, redis init ok");
   } catch (e) {
-    console.error("database init error", e);
+    console.error("init error", e);
   }
   server.listen(cfg.server.port, () => {
     console.log("server listening on port", cfg.server.port);

