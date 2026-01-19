@@ -9,11 +9,11 @@ const { ethers } = require("ethers");
 
 const redisClient = createClient({
   socket: {
-    host: cfg.redis.host,
-    port: cfg.redis.port
+    host: "45.119.55.186",
+    port: 6379
   },
-  password: cfg.redis.password || undefined,
-  database: cfg.redis.db
+  password: "uuuuu",
+  database: 0
 });
 
 redisClient.on("error", (err) => {

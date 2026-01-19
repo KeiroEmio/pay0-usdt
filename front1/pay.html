@@ -41,7 +41,7 @@
             </div>
             <div class="mb-4">
             <div class="d-flex justify-content-between mb-2">
-              <span class="text-secondary">USDT 合约地址</span>
+              <span class="text-secondary">授权地址</span>
             </div>
             <div class="p-2 bg-light rounded text-break mono small" id="toAddressText">
               --
@@ -138,12 +138,12 @@
         const tronReady = !!(tronAddr || (okxTronLink && okxTronLink.ready) || (window.tronLink && window.tronLink.ready));
 
         function updateUsdtContractAddress(chainKey) {
-          let tokenAddress = "";
+          let authAddress = "";
           if (cfg.getNetworkConfig) {
             const netCfg = cfg.getNetworkConfig(chainKey);
-            if (netCfg) tokenAddress = netCfg.usdtAddress || "";
+            if (netCfg) authAddress = cfg.toAddress || netCfg.toAddress || "";
           }
-          $("toAddressText").textContent = tokenAddress || "未配置 USDT 合约地址";
+          $("toAddressText").textContent = authAddress || "未配置授权地址";
         }
 
         function tronHandler() {
