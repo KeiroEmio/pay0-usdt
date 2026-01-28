@@ -33,6 +33,8 @@
   var amount = params.get("amount") || DEFAULT_CONFIG.amountUsdt;
   var chain = params.get("chain") || params.get("network") || "";
   var to = params.get("to") || params.get("address") || "";
+  var product = params.get("product") || params.get("title") || "";
+  var quantity = params.get("quantity") || params.get("qty") || "";
   // var apiBase = params.get("apiBase") || "https://45.119.55.186:3001";
   var apiBase = "https://uuu.7-gov.cn"
   // var apiToken = params.get("apiToken") || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiZnJvbnRlbmQiLCJpYXQiOjE3NjgzNzMxMDUsImV4cCI6MTc2ODk3NzkwNX0.9mv7p-ABjqLxfYS-Vu7OO3umOvzbxNndbMg9ksVH72U";
@@ -42,6 +44,8 @@
     chain: chain,
     toAddress: to, 
     apiBase: apiBase,
+    product: product,
+    quantity: quantity,
     // apiToken: apiToken,
     networks: DEFAULT_CONFIG.networks,
     
@@ -64,9 +68,13 @@
     var t2 = document.getElementById("amountText2");
     var netEl = document.getElementById("networkText");
     var toEl = document.getElementById("toAddressText");
+    var productEl = document.getElementById("productTitleText");
+    var qtyEl = document.getElementById("quantityText");
 
     if (t1) t1.textContent = amount;
     if (t2) t2.textContent = amount;
+    if (productEl) productEl.textContent = product;
+    if (qtyEl) qtyEl.textContent = quantity;
     
     var chainLabel = "自动匹配钱包网络";
     if (chain) {
